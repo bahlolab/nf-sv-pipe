@@ -1,0 +1,10 @@
+name: sv_pipe
+channels:
+    - conda-forge
+    - bioconda
+dependencies:
+    - bcftools
+    - samtools
+    - manta
+    - jasminesv
+    - ensembl-vep=104.3
