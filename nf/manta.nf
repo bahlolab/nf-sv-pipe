@@ -10,17 +10,18 @@ process manta {
     tuple val(fam), path(bam), path(bai), path(ref_fa), path(ref_fai)
 
     output:
-    tuple val(fam), path("*.diploidSV.vcf.gz"), path("*.candidateSmallIndels.vcf.gz"), path("*.candidateSV.vcf.gz")
+    tuple val(fam), path("${fam}.*.vcf.gz")
 
     script:
     """
-    /stornext/HPCScratch/home/munro.j/software/manta/bin/configManta.py \\
+    configManta.py \\
         --referenceFasta $ref_fa \\
         --runDir `pwd -P` \\
         --bam ${bam.join(' --bam ')}
     
-    #./runWorkflow.py -j 8 -g 4
+    ./runWorkflow.py -j 8 -g 16
 
-    #for VCF in ./results/variants/*.vcf.gz; do mv \$VCF "$fam.`basename \$VCF`"; done
+    for VCF in ./results/variants/*.vcf.gz; do mv \$VCF "$fam.`basename \$VCF`"; done
     """
 }
+
