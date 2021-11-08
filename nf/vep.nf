@@ -3,7 +3,7 @@ process vep {
     cpus 4
     memory '4 GB'
     time '1 h'
-    publishDir "progress/vep", mode: 'symlink'
+    publishDir "output/vep", mode: 'copy'
 
     input:
         tuple path(vcf), path(fasta), path(fai), path(cache)
