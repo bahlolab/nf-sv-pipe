@@ -8,4 +8,4 @@ dependencies:
     - pysam
     - manta
     - jasminesv
-    - ensembl-vep=104.3
+    - duphold
