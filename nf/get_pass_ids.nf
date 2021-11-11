@@ -6,7 +6,7 @@ process get_pass_ids {
     publishDir "progress/annotate_id", mode: 'symlink'
 
     input:
-    tuple val(fam), path(vcf)
+    tuple val(fam), path(vcf), path(index)
 
     output:
     path(out)
