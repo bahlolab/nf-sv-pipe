@@ -1,19 +1,10 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
-/*
-Overview:
-    1. call SVs per family with manta
-    2. merge SVs across cohort with Jasmine
-    3. Annotate SVs with VEP?
- */
 
 params.id = ''
 params.ped = ''
 params.bams = ''
 params.ref_fasta = ''
-params.vep_cache = ''
-params.vep_cache_ver = ''
-params.vep_assembly = ''//
 
 include { path; read_tsv; get_families; date_ymd } from './nf/functions'
 include { manta_call } from './nf/manta_call'
@@ -21,7 +12,6 @@ include { annotate_id } from './nf/annotate_id'
 include { get_pass_ids } from './nf/get_pass_ids'
 include { jasmine_merge } from './nf/jasmine_merge'
 include { filter_pass_variants } from './nf/filter_pass_variants'
-include { vep } from './nf/vep'
 
 ped = read_tsv(path(params.ped), ['fid', 'iid', 'pid', 'mid', 'sex', 'phe'])
 bams = read_tsv(path(params.bams), ['iid', 'bam'])
@@ -49,8 +39,5 @@ workflow {
         toSortedList() |
         jasmine_merge |
         combine(get_pass_ids(fam_vcfs).toSortedList().map { [it] }) |
-        filter_pass_variants |
-        combine(ref) |
-        combine([vep_cache]) |
-        vep
+        filter_pass_variants
 }
