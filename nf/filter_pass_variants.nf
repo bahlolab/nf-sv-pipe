@@ -10,7 +10,7 @@ process filter_pass_variants {
         tuple path(vcf), path(id_files)
 
     output:
-        path(filtered)
+        tuple path(filtered), path("${filtered}.tbi")
 
     script:
     filtered = vcf.name.replaceAll('.vcf.gz', '.filtered.vcf.gz')

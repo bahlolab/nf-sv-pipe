@@ -21,7 +21,7 @@ process bcftools_merge {
         """
     else
         """
-        bcftools merge $vcfs -Oz -o $out_vcf
+        bcftools merge -m id $vcfs -Oz -o $out_vcf
         bcftools index -t $out_vcf
         """
 }

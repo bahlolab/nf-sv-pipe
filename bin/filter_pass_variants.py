@@ -9,13 +9,22 @@ import gzip
 
 class VcfWriteProc:
     def __init__(self, fn, header):
-        self.Popen = Popen(['bcftools', 'view', '-Oz', '--no-version', '-o', fn],
+        self.fn = fn
+        self.Popen = Popen(['bcftools', 'view', '-Oz', '--no-version', '-o', self.fn],
                            stdin=subprocess.PIPE, stdout=subprocess.DEVNULL)
         self.variantFile = VariantFile(self.Popen.stdin, 'wu', header=header)
 
-    def close(self):
+    def index(self):
+        popen = Popen(['bcftools', 'index', '-t', self.fn],
+                      stdin=subprocess.PIPE, stdout=subprocess.DEVNULL)
+        return popen.poll()
+
+    def close(self, index=False):
         self.variantFile.close()
         self.Popen.communicate()
+        if index:
+            self.Popen.poll()
+            return self.index()
         return self.Popen.poll()
 
     def write(self, rec):
@@ -40,7 +49,7 @@ def main(out, id_files):
             rec.filter.clear()
             rec.filter.add('PASS')
             vf_out.write(rec)
-    vf_out.close()
+    vf_out.close(index=True)
 
 
 if __name__ == '__main__':

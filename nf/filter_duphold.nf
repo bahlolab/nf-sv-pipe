@@ -19,9 +19,9 @@ process filter_duphold {
     """
     bcftools view $vcf -Ou |
         bcftools filter -Ou -s "DEL_BAD_FC" \\
-            -e 'SVTYPE="DEL" & SVLEN<=-$params.sv_min_size & MEAN(FMT/DHFFC]) > 0.7' |
+            -e 'SVTYPE="DEL" & SVLEN<=-$params.sv_min_size & AVG(FMT/DHFFC)>0.7' |
         bcftools filter -Ou -s "DUP_BAD_FC" \\
-            -e 'SVTYPE="DUP" & SVLEN>=$params.sv_min_size & MEAN(FMT/DHBFC) < 1.3' |
+            -e 'SVTYPE="DUP" & SVLEN>=$params.sv_min_size & AVG(FMT/DHBFC)<1.3' |
         bcftools view -Oz -o $out_vcf &&
         bcftools index -t $out_vcf
     """
