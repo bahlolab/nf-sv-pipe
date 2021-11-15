@@ -8,4 +8,6 @@ dependencies:
     - pysam
     - jasminesv
     - duphold
+    - r-tidyverse
+    - r-docopt
     - bioconductor-qdnaseq
