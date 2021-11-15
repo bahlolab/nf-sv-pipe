@@ -7,9 +7,9 @@ params.bams = ''
 params.ref_fasta = ''
 params.assembly = 'hg38'
 
+include { path; read_tsv; get_families; date_ymd } from './nf/functions'
 include { QDNASEQ } from './nf/QDNASEQ'
 include { MANTA } from './nf/MANTA'
-include { path; read_tsv; get_families; date_ymd } from './nf/functions'
 
 ped = read_tsv(path(params.ped), ['fid', 'iid', 'pid', 'mid', 'sex', 'phe'])
 bams = read_tsv(path(params.bams), ['iid', 'bam'])
@@ -24,10 +24,9 @@ workflow {
         Channel.from(bams) |
         map { [it.iid, path(it.bam), path(it.bam + '.bai')] } |
         combine(ped.collect { [it.iid, it.fid] }, by: 0) |
-        map { it[[3,0,1,2]] } |
-        take(3)
+        map { it[[3,0,1,2]] }
 
-    MANTA(ref_ch, fam_bam_ch)
+//    MANTA(ref_ch, fam_bam_ch)
     QDNASEQ(ref_ch, fam_bam_ch)
 
 }

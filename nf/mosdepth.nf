@@ -6,7 +6,7 @@ process mosdepth {
     memory '4 GB'
     time '1 h'
     tag { "$fam:$sam" }
-    publishDir "progress/annotate_id", mode: 'symlink'
+    publishDir "progress/mosdepth", mode: 'symlink'
     container 'quay.io/biocontainers/mosdepth:0.3.2--h01d7912_0'
 
     input:

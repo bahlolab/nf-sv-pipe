@@ -1,5 +1,5 @@
 
-include { manta_call } from './manta_call'
+include { manta_call as call } from './manta_call'
 include { annotate_id } from './annotate_id'
 include { duphold } from './duphold'
 include { bcftools_merge } from './bcftools_merge'
@@ -21,7 +21,7 @@ workflow MANTA {
         map { it[[0,2,3]] } |
         groupTuple(by: 0) |
         combine(ref) |
-        manta_call |
+        call |
         flatMap { it[1].collect { p -> [it[0], p]} } |
         filter { it[1] ==~ '.+diploidSV\\.vcf\\.gz' } |
         annotate_id |

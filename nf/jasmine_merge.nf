@@ -1,16 +1,18 @@
+params.pubdir = "progress/jasmine_merge"
+params.mode = 'symlink'
 
 process jasmine_merge {
     cpus 2
     memory '4 GB'
     time '1 h'
-    publishDir "progress/jasmine_merge", mode: 'symlink'
+    publishDir params.pubdir, mode: params.mode
     tag {type}
 
     input:
     tuple val(type), path(vcfs)
 
     output:
-    tuple val(type), path(out_vcf)
+    tuple val(type), path(out_vcf), path("${out_vcf}.tbi")
 
     script:
     out_vcf = params.id + '.' + type + '.merged.vcf.gz'
@@ -30,6 +32,7 @@ process jasmine_merge {
         bcftools +fill-tags -Oz -o sorted.vcf.gz
     bcftools query -l sorted.vcf.gz | sed 's:^\\([0-9]*_\\)\\(.*\\):\\1\\2 \\2:' > rename.txt
     bcftools reheader sorted.vcf.gz --sample rename.txt --output $out_vcf
+    bcftools index -t $out_vcf
     
     rm sorted.vcf.gz *.vcf output -r
     """
