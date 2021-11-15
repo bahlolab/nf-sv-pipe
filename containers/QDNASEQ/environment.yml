@@ -3,11 +3,8 @@ channels:
     - conda-forge
     - bioconda
 dependencies:
-    - bcftools
-    - samtools
-    - pysam
-    - jasminesv
-    - duphold
     - r-tidyverse
+    - r-devtools
     - r-docopt
     - bioconductor-qdnaseq
+    - bioconductor-qdnaseq.hg19
