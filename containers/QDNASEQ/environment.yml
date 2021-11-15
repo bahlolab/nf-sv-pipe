@@ -1,0 +1,11 @@
+name: sv_pipe_qdnaseq
+channels:
+    - conda-forge
+    - bioconda
+dependencies:
+    - bcftools
+    - samtools
+    - pysam
+    - jasminesv
+    - duphold
+    - bioconductor-qdnaseq
