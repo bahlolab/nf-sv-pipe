@@ -1,14 +1,17 @@
 
-include { manta_call as call } from './manta_call'
-include { annotate_id } from './annotate_id'
-include { duphold } from './duphold'
-include { bcftools_merge } from './bcftools_merge'
-include { bcftools_concat } from './bcftools_concat' addParams(pubdir: "output", mode: "copy")
-include { filter_duphold } from './filter_duphold'
-include { split_sv_types } from './split_sv_types'
-include { get_pass_ids } from './get_pass_ids'
-include { jasmine_merge } from './jasmine_merge'
-include { filter_pass_variants } from './filter_pass_variants'
+include { call } from './MANTA/call'
+include { annotate_id } from './common/annotate_id'
+include { split_sv_types } from './MANTA/split_sv_types'
+include { jasmine_merge } from './common/jasmine_merge'
+include { get_pass_ids } from './common/get_pass_ids'
+include { filter_pass_variants } from './common/filter_pass_variants'
+include { bcftools_concat } from './MANTA/bcftools_concat'
+
+//include { duphold } from './MANTA/duphold'
+//include { bcftools_merge } from './MANTA/bcftools_merge'
+//include { filter_duphold } from './filter_duphold'
+
+
 
 workflow MANTA {
     take:
@@ -20,19 +23,11 @@ workflow MANTA {
     fam_vcfs = fam_bam_ch |
         map { it[[0,2,3]] } |
         groupTuple(by: 0) |
+        take(3) |
         combine(ref) |
         call |
-        flatMap { it[1].collect { p -> [it[0], p]} } |
-        filter { it[1] ==~ '.+diploidSV\\.vcf\\.gz' } |
-        annotate_id |
-        combine(fam_bam_ch, by:0) |
-        map { it[[0,3,1,2,4,5]] } |
-        combine(ref) |
-        duphold |
-        map { it[0,2,3] } |
-        groupTuple(by:0) |
-        bcftools_merge |
-        filter_duphold
+        map { it[0..1] } |
+        annotate_id
 
     fam_vcfs |
         split_sv_types |
@@ -46,6 +41,17 @@ workflow MANTA {
         toList() |
         map { it.transpose() } |
         bcftools_concat
+
+//        combine(fam_bam_ch, by:0) |
+//        map { it[[0,3,1,2,4,5]] } |
+//        combine(ref) |
+//        duphold |
+//        map { it[0,2,3] } |
+//        groupTuple(by:0) |
+//        bcftools_merge |
+//        filter_duphold
+
+
 
 //    emit:
 }

@@ -6,6 +6,6 @@ dependencies:
     - bcftools
     - samtools
     - pysam
-    - manta
     - jasminesv
     - duphold
+    - python>=3.7

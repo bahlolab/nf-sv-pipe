@@ -6,16 +6,16 @@ process jasmine_merge {
     memory '4 GB'
     time '1 h'
     publishDir params.pubdir, mode: params.mode
-    tag {type}
+    tag { uid }
 
     input:
-    tuple val(type), path(vcfs)
+    tuple val(uid), path(vcfs)
 
     output:
-    tuple val(type), path(out_vcf), path("${out_vcf}.tbi")
+    tuple val(uid), path(out_vcf), path("${out_vcf}.tbi")
 
     script:
-    out_vcf = params.id + '.' + type + '.merged.vcf.gz'
+    out_vcf = params.id + '.' + uid + '.merged.vcf.gz'
     """
     gzip -fdk $vcfs
     echo $vcfs | sed 's:\\.gz::g' | tr ' ' '\\n' > vcf_list.txt

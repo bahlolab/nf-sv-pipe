@@ -1,10 +1,10 @@
 
-process qdnaseq_bins {
+process bins {
     cpus 1
     memory '1 GB'
     time '1 h'
     label 'qdnaseq'
-    publishDir "progress/qdnaseq_bins", mode: 'symlink'
+    publishDir "progress/bins", mode: 'symlink'
 
     output:
     path('bins.bed.gz')

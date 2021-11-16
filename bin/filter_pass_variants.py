@@ -40,7 +40,7 @@ def read_ids(id_files):
     return ids
 
 
-def main(out, id_files):
+def main(out, id_files, most):
     ids = read_ids(id_files)
     vf_in = VariantFile('-')
     vf_out = VcfWriteProc(out, vf_in.header)
@@ -56,5 +56,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--out', default='output', help='output variant filename')
     parser.add_argument('--ids', action='append', help='set of pass ids')
+    parser.add_argument('--most', action='store_true', help='instead of requiring a single pass variant,'
+                                                            ' require most variants to pass')
     args = parser.parse_args()
-    main(args.out, args.ids)
+    main(args.out, args.ids, args.most)

@@ -16,18 +16,18 @@ process duphold {
     out_vcf = "${fam}.${sam}.duphold.vcf.gz"
     """
     bcftools view $vcf -s $sam -Ou | 
-        bcftools view -i 'GT="alt" & (SVTYPE="DEL" | SVTYPE="DUP")' -Ob -o sample_call.bcf &&
-        bcftools index sample_call.bcf
+        bcftools view -i 'SVTYPE="DEL" | SVTYPE="DUP"' -Ob -o deldup.bcf &&
+        bcftools index deldup.bcf
     bcftools view $vcf -s $sam -Ou | 
-        bcftools view -e 'GT="alt" & (SVTYPE="DEL" | SVTYPE="DUP")' -Ob -o sample_no_call.bcf &&
-        bcftools index sample_no_call.bcf
+        bcftools view -e 'SVTYPE="DEL" | SVTYPE="DUP"' -Ob -o other.bcf &&
+        bcftools index other.bcf
     duphold --threads $task.cpus \\
-        --vcf sample_call.bcf \\
+        --vcf deldup.bcf \\
         --bam $bam \\
         --fasta $ref \\
         --output duphold.bcf &&
         bcftools index duphold.bcf
-    bcftools concat duphold.bcf sample_no_call.bcf -a -Oz -o $out_vcf &&
+    bcftools concat duphold.bcf other.bcf -a -Oz -o $out_vcf &&
         bcftools index -t $out_vcf
     """
 }
