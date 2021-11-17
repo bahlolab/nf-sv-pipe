@@ -7,5 +7,4 @@ dependencies:
     - samtools
     - pysam
     - jasminesv
-    - duphold
     - python>=3.7
