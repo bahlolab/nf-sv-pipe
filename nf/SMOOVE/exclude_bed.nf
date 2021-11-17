@@ -3,7 +3,7 @@ process get_exclude_bed {
     cpus 1
     memory '1 GB'
     time '1 h'
-    publishDir 'progress/smoove_exclude_bed', mode: 'symlink'
+    publishDir 'progress/SMOOVE/exclude_bed', mode: 'symlink'
     container null
 
     output:

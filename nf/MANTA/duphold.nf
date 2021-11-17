@@ -3,17 +3,19 @@ process duphold {
     cpus 2
     memory '2 GB'
     time '1 h'
-    publishDir "progress/duphold", mode: 'symlink'
-    tag {"$fam:$sam"}
+    container = 'brentp/duphold:v0.2.3'
+    publishDir "progress/MANTA/duphold", mode: 'symlink'
+    tag { sam }
+
 
     input:
-    tuple val(fam), val(sam), path(vcf), path(tbi), path(bam), path(bai), path(ref), path(fai)
+    tuple val(sam), path(vcf), path(tbi), path(bam), path(bai), path(ref), path(fai)
 
     output:
-    tuple val(fam), val(sam), path(out_vcf), path("${out_vcf}.tbi")
+    tuple val(sam), path(out_vcf), path("${out_vcf}.tbi")
 
     script:
-    out_vcf = "${fam}.${sam}.duphold.vcf.gz"
+    out_vcf = "${sam}.manta.duphold.vcf.gz"
     """
     bcftools view $vcf -s $sam -Ou | 
         bcftools view -i 'SVTYPE="DEL" | SVTYPE="DUP"' -Ob -o deldup.bcf &&

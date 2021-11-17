@@ -1,11 +1,9 @@
-params.pubdir = "progress/jasmine_merge"
-params.mode = 'symlink'
 
 process jasmine_merge {
     cpus 2
     memory '4 GB'
     time '1 h'
-    publishDir params.pubdir, mode: params.mode
+    publishDir "progress/${params.caller}/jasmine_merge", mode: 'symlink'
     tag { uid }
 
     input:

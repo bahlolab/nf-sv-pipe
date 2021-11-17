@@ -8,9 +8,11 @@ params.ref_fasta = ''
 params.assembly = 'hg38'
 params.callers = ['MANTA', 'QDNASEQ', 'SMOOVE', 'CNVNATOR']
 params.copy_ref = true
+params.copy_bams = true
 
 include { path; read_tsv; get_families; date_ymd } from './nf/functions'
 include { copy_ref } from './nf/common/copy_ref'
+include { copy_bams } from './nf/common/copy_bams'
 include { MANTA } from './nf/MANTA'
 include { QDNASEQ } from './nf/QDNASEQ'
 include { SMOOVE } from './nf/SMOOVE'
@@ -30,6 +32,7 @@ workflow {
         map { [it.iid, path(it.bam), path(it.bam + '.bai')] } |
         combine(ped.collect { [it.iid, it.fid] }, by: 0) |
         map { it[[3,0,1,2]] }
+    if (params.copy_bams) { fam_bam_ch = copy_bams(fam_bam_ch) }
 
     if (params.callers.contains('SMOOVE')) {
         SMOOVE(ref_ch, fam_bam_ch)

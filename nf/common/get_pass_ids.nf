@@ -3,7 +3,7 @@ process get_pass_ids {
     cpus 1
     memory '1 GB'
     time '1 h'
-    publishDir "progress/annotate_id", mode: 'symlink'
+    publishDir "progress/${params.caller}/set_id", mode: 'symlink'
 
     input:
     tuple val(fam), path(vcf), path(index)

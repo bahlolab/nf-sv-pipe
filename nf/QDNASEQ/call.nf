@@ -4,7 +4,7 @@ process call {
     memory '1 GB'
     time '1 h'
     label 'qdnaseq'
-    publishDir "progress/qdnaseq_call", mode: 'symlink'
+    publishDir "progress/QDNASEQ/call", mode: 'symlink'
     tag { sam }
 
     input:

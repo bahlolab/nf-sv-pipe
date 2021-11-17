@@ -4,10 +4,8 @@ process call {
     memory '8 GB'
     time '6 h'
     tag { sam }
-    publishDir 'progress/smoove_call', mode: 'symlink'
-    container null
-    conda '/stornext/Home/data/allstaff/m/munro.j/miniconda3/envs/smoove'
-//    container 'quay.io/biocontainers/smoove:0.2.5--0'
+    publishDir 'progress/SMOOVE/call', mode: 'symlink'
+    container 'quay.io/biocontainers/smoove:0.2.5--0'
 
     input:
         tuple val(sam), path(bam), path(bai), path(ref_fa), path(ref_fai), path(exclude)

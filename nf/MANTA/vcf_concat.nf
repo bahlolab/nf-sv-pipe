@@ -1,13 +1,11 @@
 
 params.allow_overlap = true
-params.pubdir = "progress/bcftools_concat"
-params.mode = 'symlink'
 
-process bcftools_concat {
+process vcf_concat {
     cpus 1
     memory '1 GB'
     time '1 h'
-    publishDir params.pubdir, mode: params.mode
+    publishDir "progress/MANTA/manta_vcf_concat", mode: 'symlink'
 
     input:
         tuple path(vcfs), path(indices)

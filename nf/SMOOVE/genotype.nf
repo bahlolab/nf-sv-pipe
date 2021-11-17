@@ -4,9 +4,8 @@ process genotype {
     memory '4 GB'
     time '4 h'
     tag { sam }
-    publishDir 'progress/smoove_genotype', mode: 'symlink'
-    container null
-    conda '/stornext/Home/data/allstaff/m/munro.j/miniconda3/envs/smoove'
+    publishDir 'progress/SMOOVE/genotype', mode: 'symlink'
+    container 'quay.io/biocontainers/smoove:0.2.5--0'
 
     input:
         tuple path(vcf), path(ref_fa), path(ref_fai), val(sam), path(bam), path(bai)

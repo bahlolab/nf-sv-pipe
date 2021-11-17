@@ -3,12 +3,11 @@ params.min_len = 500
 params.max_del_fc = 0.70
 params.min_dup_fc = 1.25
 
-process filter_fc {
+process filter_duphold {
     cpus 1
     memory '1 GB'
     time '1 h'
-    publishDir "progress/smoove_filter", mode: 'symlink'
-    label 'pysam'
+    publishDir "progress/${params.caller}/filter_duphold", mode: 'symlink'
 
     input:
         path(vcf)
@@ -17,7 +16,8 @@ process filter_fc {
         tuple path(out_vcf), path("${out_vcf}.tbi")
 
     script:
-    out_vcf = "${params.id}.smoove.filtered.vcf.gz"
+
+    out_vcf = vcf.name.replaceAll('.vcf.gz', '.filter-duphold.vcf.gz')
     """
     filter_duphold_fc.py \\
         --input $vcf \\
@@ -26,5 +26,6 @@ process filter_fc {
         --min-dup-fc $params.min_dup_fc \\
         --min-len $params.min_len
     bcftools view -f PASS soft-filterd.vcf.gz -Oz -o $out_vcf
+    bcftools index -t $out_vcf
     """
 }
