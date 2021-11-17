@@ -15,7 +15,7 @@ RUN conda env create -f /environment.yml \
     && conda env export --name $NAME > $NAME.yml
 
 RUN /opt/conda/envs/$NAME/bin/R --slave --vanilla -e \
-    "devtools::install_github('asntech/QDNAseq.hg3', \
+    "devtools::install_github('asntech/QDNAseq.hg38', \
         force = TRUE, upgrade = 'never')"
 
 # set env variables
