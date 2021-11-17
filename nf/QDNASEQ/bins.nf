@@ -3,7 +3,7 @@ process bins {
     cpus 1
     memory '1 GB'
     time '1 h'
-    label 'qdnaseq'
+    label 'QDNASEQ'
     publishDir "progress/QDNASEQ/bins", mode: 'symlink'
 
     output:
