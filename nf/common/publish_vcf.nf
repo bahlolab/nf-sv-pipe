@@ -21,4 +21,3 @@ process publish_vcf {
     ln -s `readlink $tbi` $out_tbi
     """
 }
-

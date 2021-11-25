@@ -16,6 +16,7 @@ include { copy_bams } from './nf/common/copy_bams'
 include { MANTA } from './nf/MANTA'
 include { QDNASEQ } from './nf/QDNASEQ'
 include { SMOOVE } from './nf/SMOOVE'
+include { CNVNATOR } from './nf/CNVNATOR'
 
 ped = read_tsv(path(params.ped), ['fid', 'iid', 'pid', 'mid', 'sex', 'phe'])
 bams = read_tsv(path(params.bams), ['iid', 'bam'])
@@ -42,5 +43,8 @@ workflow {
     }
     if (params.callers.contains('QDNASEQ')) {
         QDNASEQ(ref_ch, fam_bam_ch)
+    }
+    if (params.callers.contains('CNVNATOR')) {
+        CNVNATOR(ref_ch, fam_bam_ch)
     }
 }
