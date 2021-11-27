@@ -31,7 +31,7 @@ class VcfWriter:
 
     def index(self):
         proc = Popen(['bcftools', 'index', '-f', self.output],
-                      stdin=subprocess.PIPE, stdout=subprocess.DEVNULL)
+                     stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
         proc.wait()
         return proc.poll()
 
@@ -71,7 +71,7 @@ def proc_vcfs(inputs, sv_types):
             sv_type = get_sv_type(rec)
             if sv_types and sv_type not in sv_types:
                 continue
-            rec.id = pref + '_' + str(i)
+            rec.id = sv_type + '_' + pref + '_' + str(i)
             if sv_type not in outs:
                 outs[sv_type] = VcfWriter("{}/{}.{}.vcf".format(WORK, pref, sv_type), vf.header, remove=REMOVE)
                 records[pref][sv_type] = {}
@@ -100,6 +100,7 @@ def jasmine(input_vcfs, jasmine_cp, args):
     for sv_type in input_vcfs:
         input_list = '{}/{}.txt'.format(WORK, sv_type)
         output = '{}/{}.vcf'.format(WORK, sv_type)
+        output_bcf = '{}/{}.bcf'.format(WORK, sv_type)
         with open(input_list, "w") as out:
             out.write("\n".join(input_vcfs[sv_type]))
         cmd = ['java', '-cp', jasmine_cp, 'Main',
@@ -115,18 +116,28 @@ def jasmine(input_vcfs, jasmine_cp, args):
         if proc.poll() != 0:
             print("jasmine error")
             exit(1)
-        proc = Popen(['bcftools', 'sort', output, '-Oz', '-o', '{}.gz'.format(output)],
-                     stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-        proc.wait()
-        vcfs[sv_type] = '{}.gz'.format(output)
+        sort_and_index(output, output_bcf)
+        vcfs[sv_type] = output_bcf
     return vcfs
 
 
+def sort_and_index(input, output):
+    mode = MODE[file_ext(output)]
+    proc = Popen(['bcftools', 'sort', input, '-O{}'.format(mode), '-o', output],
+                 stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    proc.wait()
+    proc = Popen(['bcftools', 'index', '-f', output],
+                 stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    proc.wait()
+    return proc.poll()
+
+
 def mean(x):
-    return round(sum(x) / len(x))
+    if x:
+        return round(sum(x) / len(x))
 
 
-def merge(jasmine_vcfs, records):
+def merge(jasmine_vcfs, records, output):
     all_records = {}
     for recs in records.values():
         for sv_type, rs in recs.items():
@@ -136,6 +147,7 @@ def merge(jasmine_vcfs, records):
                 all_records[sv_type] = {}
             all_records[sv_type].update(rs)
 
+    merged = []
     for sv_type in jasmine_vcfs:
         vf = VariantFile(jasmine_vcfs[sv_type])
         info_out = '{}/{}.info.bcf'.format(WORK, sv_type)
@@ -144,10 +156,9 @@ def merge(jasmine_vcfs, records):
             IDS = rec.info.get('IDLIST')
             recs = [all_records[sv_type][x] for x in IDS]
             rec.ref = 'N'
-            # rec.qual = mean([x.qual for x in recs])
             rec.pos = mean([x.pos for x in recs])
             rec.stop = mean([x.stop for x in recs])
-            rec.info['SVLEN'] = (mean([x.info['SVLEN'][0] for x in recs]),)
+            rec.info['SVLEN'] = (mean([x.info['SVLEN'][0] for x in recs if 'SVLEN' in x.info]),)
             rec.filter.clear()
             if any(['PASS' in x.filter for x in recs]):
                 rec.filter.add('PASS')
@@ -173,12 +184,20 @@ def merge(jasmine_vcfs, records):
                 vf_out.write(rec)
             vf_out.close(index=True)
             sample_outs.append(pref_out)
-        output = '{}.merged.vcf.gz'.format(sv_type)
-        cmd = ['bcftools', 'merge', '-m', 'id', '--missing-to-ref', '-Oz', '-o', output, info_out]
+        out = '{}/{}.merged.bcf'.format(WORK, sv_type)
+        cmd = ['bcftools', 'merge', '-m', 'id', '--missing-to-ref', '-Oz', '-o', out, info_out]
         cmd.extend(sample_outs)
         proc = Popen(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
         proc.wait()
-        print("created " + output)
+        proc = Popen(['bcftools', 'index', '-f', out],
+                     stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        proc.wait()
+        merged.append(out)
+    cmd = ['bcftools', 'concat', '-a', '-O{}'.format(MODE[file_ext(output)]), '-o', output]
+    cmd.extend(merged)
+    proc = Popen(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    proc.wait()
+    return proc.poll()
 
 
 def main(inputs, output, sv_types, jasmine_dir, jasmine_args):
@@ -187,16 +206,17 @@ def main(inputs, output, sv_types, jasmine_dir, jasmine_args):
         os.makedirs(WORK)
     vcfs, records = proc_vcfs(inputs, sv_types)
     jasmine_vcfs = jasmine(vcfs, jasmine_cp, jasmine_args)
-    merge(jasmine_vcfs, records)
+    merge(jasmine_vcfs, records, output)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('inputs', nargs='+', help='input sample vcfs to be merged')
-    parser.add_argument('--output', default='output', help='prefix of output variant filename(s)')
+    parser.add_argument('--output', default='output.vcf.gz', help='output variant file')
     parser.add_argument('--work', default='work', help='working directory')
     parser.add_argument('--jasmine-dir', default='/bin', help='path to jasmine jar file')
     parser.add_argument('--sv-type', action='append', help='process only this SVTYPE')
+    parser.add_argument('--args', action='append', help='args to pass to jasmine')
     args = parser.parse_args()
     jasmine_args = ['threads=2',
                     'max_dist_linear=0.20',
