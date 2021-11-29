@@ -8,7 +8,9 @@ include { call } from './CNVNATOR/call'
 include { to_vcf } from './CNVNATOR/to_vcf'
 include { jasmine_merge } from './common/jasmine_merge'
 include { publish_vcf } from './common/publish_vcf'
-
+/*
+    TODO - sample filtering for samples that have high noise and too many calls
+ */
 workflow CNVNATOR {
     take:
         ref

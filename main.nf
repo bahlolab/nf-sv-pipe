@@ -6,7 +6,8 @@ params.ped = ''
 params.bams = ''
 params.ref_fasta = ''
 params.assembly = 'hg38'
-params.callers = ['MANTA', 'QDNASEQ', 'SMOOVE', 'CNVNATOR']
+params.callers = ['MANTA']
+//params.callers = ['MANTA', 'QDNASEQ', 'SMOOVE', 'CNVNATOR']
 params.copy_ref = true
 params.copy_bams = true
 

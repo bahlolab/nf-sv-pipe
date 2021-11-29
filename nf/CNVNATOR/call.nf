@@ -2,7 +2,7 @@
 process call {
     cpus 1
     memory '16 GB'
-    time '6 h'
+    time '2 h'
     container 'quay.io/biocontainers/cnvnator:0.4.1--h9c7f56d_2'
     publishDir 'progress/CNVNATOR/call', mode: 'symlink'
     tag { sam }
@@ -28,6 +28,5 @@ process call {
 
 /*
     High memory requirement seems to be limited to the -tree module
-    This is also the most time consuming so probably not work splitting into separate jobs
-
+    This is also the most time consuming so
  */

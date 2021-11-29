@@ -5,7 +5,6 @@ import re
 import argparse
 import subprocess
 from subprocess import Popen
-import time
 
 MODE = {'bcf': 'b', 'vcf': 'v', 'gz': 'z'}
 REMOVE = ['^INFO/SVTYPE', '^INFO/SVLEN', '^INFO/END', '^INFO/STRANDS',
@@ -25,15 +24,12 @@ class VcfWriter:
         cmd.extend(['bcftools', 'view', '--no-version', '-O{}'.format(mode), '-o', output])
         if drop:
             cmd.extend(['-G'])
-        self.proc = Popen(' '.join(cmd), stdin=subprocess.PIPE,stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        self.proc = Popen(' '.join(cmd), stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                           shell=True)
         self.variantFile = VariantFile(self.proc.stdin, 'wu', header=header)
 
     def index(self):
-        proc = Popen(['bcftools', 'index', '-f', self.output],
-                     stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-        proc.wait()
-        return proc.poll()
+        return index(self.output)
 
     def close(self, index=False):
         self.variantFile.close()
@@ -56,6 +52,51 @@ def get_sv_type(record):
     if 'SVTYPE' in record.info:
         return record.info.get('SVTYPE')
     return 'NONE'
+
+
+def index(filename):
+    proc = Popen(['bcftools', 'index', '-f', filename],
+                 stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    proc.wait()
+    return proc.poll()
+
+
+def sort_and_index(input, output):
+    proc = Popen(['bcftools', 'sort', input, '-O{}'.format(MODE[file_ext(output)]), '-o', output],
+                 stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    proc.wait()
+    return index(output)
+
+
+def concat_fill_and_index(inputs, output):
+    cmd = ['bcftools', 'concat', '-a', '-Ou'] + inputs + \
+          ['|', 'bcftools', '+fill-tags', '-O{}'.format(MODE[file_ext(output)]),
+           '-o', output, '--', '-t', 'AF,AC,AN']
+    proc = Popen(' '.join(cmd), stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, shell=True)
+    proc.wait()
+    return index(output)
+
+
+def merge_and_index(inputs, output):
+    cmd = ['bcftools', 'merge', '-m', 'id', '--missing-to-ref', '-O{}'.format(MODE[file_ext(output)]),
+           '-o', output] + inputs
+    proc = Popen(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    proc.wait()
+    return index(output)
+
+
+def mean(x):
+    if x:
+        return round(sum(x) / len(x))
+
+
+def get_jasmine_cp(jasmine_dir):
+    jasmine_jar = jasmine_dir + '/jasmine.jar'
+    iris_jar = jasmine_dir + '/jasmine_iris.jar'
+    if not os.path.isfile(jasmine_jar) or not os.path.isfile(iris_jar):
+        print("jasmine.jar/jasmine_iris.jar not found in {}".format(jasmine_dir))
+        exit(1)
+    return iris_jar + ':' + jasmine_jar
 
 
 def proc_vcfs(inputs, sv_types):
@@ -86,15 +127,6 @@ def proc_vcfs(inputs, sv_types):
     return vcfs, records
 
 
-def get_jasmine_cp(jasmine_dir):
-    jasmine_jar = jasmine_dir + '/jasmine.jar'
-    iris_jar = jasmine_dir + '/jasmine_iris.jar'
-    if not os.path.isfile(jasmine_jar) or not os.path.isfile(iris_jar):
-        print("jasmine.jar/jasmine_iris.jar not found in {}".format(jasmine_dir))
-        exit(1)
-    return iris_jar + ':' + jasmine_jar
-
-
 def jasmine(input_vcfs, jasmine_cp, args):
     vcfs = {}
     for sv_type in input_vcfs:
@@ -121,22 +153,6 @@ def jasmine(input_vcfs, jasmine_cp, args):
     return vcfs
 
 
-def sort_and_index(input, output):
-    mode = MODE[file_ext(output)]
-    proc = Popen(['bcftools', 'sort', input, '-O{}'.format(mode), '-o', output],
-                 stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-    proc.wait()
-    proc = Popen(['bcftools', 'index', '-f', output],
-                 stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-    proc.wait()
-    return proc.poll()
-
-
-def mean(x):
-    if x:
-        return round(sum(x) / len(x))
-
-
 def merge(jasmine_vcfs, records, output):
     all_records = {}
     for recs in records.values():
@@ -156,10 +172,12 @@ def merge(jasmine_vcfs, records, output):
             IDS = rec.info.get('IDLIST')
             recs = [all_records[sv_type][x] for x in IDS]
             rec.ref = 'N'
+            # rec.alts = ('<' + sv_type + '>',) # only needed for BND
             rec.pos = mean([x.pos for x in recs])
             rec.stop = mean([x.stop for x in recs])
             rec.info['SVLEN'] = (mean([x.info['SVLEN'][0] for x in recs if 'SVLEN' in x.info]),)
             rec.filter.clear()
+
             if any(['PASS' in x.filter for x in recs]):
                 rec.filter.add('PASS')
             else:
@@ -169,6 +187,7 @@ def merge(jasmine_vcfs, records, output):
                 r.id = rec.id
                 r.pos = rec.pos
                 r.ref = 'N'
+                # r.alts = rec.alts # only needed for BND
                 r.filter.clear()
                 r.filter.add('PASS')
             vf_out.write(rec)
@@ -185,19 +204,9 @@ def merge(jasmine_vcfs, records, output):
             vf_out.close(index=True)
             sample_outs.append(pref_out)
         out = '{}/{}.merged.bcf'.format(WORK, sv_type)
-        cmd = ['bcftools', 'merge', '-m', 'id', '--missing-to-ref', '-Oz', '-o', out, info_out]
-        cmd.extend(sample_outs)
-        proc = Popen(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-        proc.wait()
-        proc = Popen(['bcftools', 'index', '-f', out],
-                     stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-        proc.wait()
+        merge_and_index([info_out] + sample_outs, out)
         merged.append(out)
-    cmd = ['bcftools', 'concat', '-a', '-O{}'.format(MODE[file_ext(output)]), '-o', output]
-    cmd.extend(merged)
-    proc = Popen(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-    proc.wait()
-    return proc.poll()
+    concat_fill_and_index(merged, output)
 
 
 def main(inputs, output, sv_types, jasmine_dir, jasmine_args):
@@ -218,11 +227,9 @@ if __name__ == '__main__':
     parser.add_argument('--sv-type', action='append', help='process only this SVTYPE')
     parser.add_argument('--args', action='append', help='args to pass to jasmine')
     args = parser.parse_args()
-    jasmine_args = ['threads=2',
-                    'max_dist_linear=0.20',
-                    'max_dist=500',
-                    'min_overlap=0.80']
+    # jasmine_args = ['max_dist_linear=0.20',
+    #                 'max_dist=500',
+    #                 'min_overlap=0.80']
     WORK = args.work
+    jasmine_args = args.args if args.args else []
     main(args.inputs, args.output, args.sv_type, args.jasmine_dir, jasmine_args)
-
-# TODO: add option --jasmine-args to pass through arbitrary jasmine args
