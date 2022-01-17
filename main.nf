@@ -1,12 +1,18 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
+/*
+TODO:
+ - exclude regions (e.g. centromeres, gaps)
+ - callset merging
+    - naive version: just set ids and use bcftools concat
+ */
 
 params.id = ''
 params.ped = ''
 params.bams = ''
 params.ref_fasta = ''
 params.assembly = 'hg38'
-params.callers = ['MANTA']
+params.callers = ['SMOOVE', 'MANTA', 'CNVNATOR']
 //params.callers = ['MANTA', 'QDNASEQ', 'SMOOVE', 'CNVNATOR']
 params.copy_ref = true
 params.copy_bams = true
@@ -34,6 +40,7 @@ workflow {
         map { [it.iid, path(it.bam), path(it.bam + '.bai')] } |
         combine(ped.collect { [it.iid, it.fid] }, by: 0) |
         map { it[[3,0,1,2]] }
+
     if (params.copy_bams) { fam_bam_ch = copy_bams(fam_bam_ch) }
 
     if (params.callers.contains('SMOOVE')) {

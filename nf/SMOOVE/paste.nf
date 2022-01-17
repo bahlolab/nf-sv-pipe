@@ -17,5 +17,7 @@ process paste {
         """
         mkdir tmp && export TMPDIR=tmp
         smoove paste $vcfs --name $params.id
+        mv $vcf tmp.vcf.gz
+        bcftools +fill-tags tmp.vcf.gz -Oz -o $vcf -- -t AF,AC,AN
         """
 }

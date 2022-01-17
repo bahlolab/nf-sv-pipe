@@ -187,7 +187,8 @@ def merge(jasmine_vcfs, records, output):
                 r.id = rec.id
                 r.pos = rec.pos
                 r.ref = 'N'
-                # r.alts = rec.alts # only needed for BND
+                # needed for insertions with alt sequence
+                r.alts = rec.alts
                 r.filter.clear()
                 r.filter.add('PASS')
             vf_out.write(rec)

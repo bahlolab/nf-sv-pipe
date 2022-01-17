@@ -98,8 +98,10 @@ export_vcf <- function(obj, counts_obj) {
     gt[score == 2] <- "0/1"
     gt[score == 3] <- "0/1"
     options(scipen = 100)
-    id <- "."
-    ref <- "<DIP>"
+    # id <- "."
+    id <- str_c(pd$name[i], "QDNAseq", svtype,  seq_along(score), sep = '_')
+    # ref <- "<DIP>"
+    ref <- "N"
     alt <- paste("<", svtype, ">", sep = "")
     qual <- 1000
     filter <- "PASS"

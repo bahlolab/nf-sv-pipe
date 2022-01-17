@@ -3,12 +3,8 @@ params.caller = 'MANTA'
 
 include { call } from './MANTA/call'
 include { convert_inv } from './MANTA/convert_inv'
-//include { set_id } from './common/set_id'
 include { split_sv_types } from './MANTA/split_sv_types'
 include { jasmine_merge } from './MANTA/jasmine_merge'
-//include { get_pass_ids } from './common/get_pass_ids'
-//include { filter_pass_variants } from './common/filter_pass_variants'
-//include { vcf_concat } from './MANTA/vcf_concat'
 include { duphold } from './MANTA/duphold'
 include { vcf_merge } from './MANTA/vcf_merge'
 include { filter_duphold } from './common/filter_duphold'
@@ -33,8 +29,8 @@ workflow MANTA {
         groupTuple(by: 0) |
         combine(ref) |
         call |
-        combine(ref) |
-        convert_inv |
+//        combine(ref) |
+//        convert_inv |
         map { it[1..2] } |
         toSortedList() |
         map { it.transpose() } |

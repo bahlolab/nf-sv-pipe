@@ -10,6 +10,11 @@ include { get_pass_ids } from './common/get_pass_ids'
 include { filter_pass_variants } from './common/filter_pass_variants'
 include { publish_vcf } from './common/publish_vcf'
 
+/* TODO:
+     - transition to jasmine_merge.py
+     - exclude regions
+ */
+
 workflow QDNASEQ {
     take:
         ref
