@@ -6,6 +6,5 @@ dependencies:
     - bcftools
     - samtools
     - pysam
-    - manta
     - jasminesv
-    - ensembl-vep=104.3
+    - python>=3.7
