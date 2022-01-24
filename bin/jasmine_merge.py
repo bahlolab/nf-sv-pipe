@@ -4,7 +4,8 @@ from pysam import VariantFile
 import re
 import argparse
 import subprocess
-from subprocess import Popen
+from subprocess import Popen, check_call
+from shutil import rmtree
 
 MODE = {'bcf': 'b', 'vcf': 'v', 'gz': 'z'}
 REMOVE = ['^INFO/SVTYPE', '^INFO/SVLEN', '^INFO/END', '^INFO/STRANDS',
@@ -55,16 +56,18 @@ def get_sv_type(record):
 
 
 def index(filename):
-    proc = Popen(['bcftools', 'index', '-f', filename],
-                 stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-    proc.wait()
-    return proc.poll()
+    return check_call(['bcftools', 'index', '-f', filename],
+                      stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
 
 
-def sort_and_index(input, output):
-    proc = Popen(['bcftools', 'sort', input, '-O{}'.format(MODE[file_ext(output)]), '-o', output],
-                 stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-    proc.wait()
+def sort_and_index(input, output, drop=False):
+    if drop:
+        cmd = ['bcftools', 'view', input, '-G', '-Ou', '|',
+               'bcftools', 'sort', '-T', WORK, '-O{}'.format(MODE[file_ext(output)]), '-o', output]
+        check_call(' '.join(cmd), shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+    else:
+        cmd = ['bcftools', 'sort', input, '-T', WORK, '-O{}'.format(MODE[file_ext(output)]), '-o', output]
+        check_call(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     return index(output)
 
 
@@ -72,16 +75,14 @@ def concat_fill_and_index(inputs, output):
     cmd = ['bcftools', 'concat', '-a', '-Ou'] + inputs + \
           ['|', 'bcftools', '+fill-tags', '-O{}'.format(MODE[file_ext(output)]),
            '-o', output, '--', '-t', 'AF,AC,AN']
-    proc = Popen(' '.join(cmd), stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL, shell=True)
-    proc.wait()
+    check_call(' '.join(cmd), shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     return index(output)
 
 
 def merge_and_index(inputs, output):
     cmd = ['bcftools', 'merge', '-m', 'id', '--missing-to-ref', '-O{}'.format(MODE[file_ext(output)]),
            '-o', output] + inputs
-    proc = Popen(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-    proc.wait()
+    check_call(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
     return index(output)
 
 
@@ -138,17 +139,14 @@ def jasmine(input_vcfs, jasmine_cp, args):
         cmd = ['java', '-cp', jasmine_cp, 'Main',
                'iris_args=samtools_path=samtools,racon_path=racon,minimap_path=minimap2',
                '--keep_var_ids',
+               '--output_genotypes',
                'file_list={}'.format(input_list),
                'out_file={}'.format(output),
                'out_dir={}'.format(WORK)]
         cmd.extend(args)
         print(' '.join(cmd))
-        proc = Popen(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
-        proc.wait()
-        if proc.poll() != 0:
-            print("jasmine error")
-            exit(1)
-        sort_and_index(output, output_bcf)
+        check_call(cmd, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL)
+        sort_and_index(output, output_bcf, drop=True)
         vcfs[sv_type] = output_bcf
     return vcfs
 
@@ -217,6 +215,7 @@ def main(inputs, output, sv_types, jasmine_dir, jasmine_args):
     vcfs, records = proc_vcfs(inputs, sv_types)
     jasmine_vcfs = jasmine(vcfs, jasmine_cp, jasmine_args)
     merge(jasmine_vcfs, records, output)
+    rmtree(WORK)
 
 
 if __name__ == '__main__':

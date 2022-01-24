@@ -1,4 +1,6 @@
-
+/*
+    Note: INV/BND not currently possible as not handled well by jasmine
+*/
 process jasmine_merge {
     cpus 2
     memory '4 GB'
@@ -25,8 +27,5 @@ process jasmine_merge {
          --args 'min_overlap=0.80' \\
          --args 'threads=2'
     """
-    /*
-        INV/BND not currently possible as not handled well by jasmine
-    */
 }
 

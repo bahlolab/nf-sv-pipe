@@ -4,6 +4,7 @@ process to_vcf {
     memory '1 GB'
     time '1 h'
     publishDir 'progress/CNVNATOR/to_vcf', mode: 'symlink'
+    tag { sam }
 
     input:
         tuple val(sam), path(cnvnator_out), path(ref), path(fai)

@@ -46,9 +46,9 @@ workflow {
     if (params.callers.contains('SMOOVE')) {
         SMOOVE(ref_ch, fam_bam_ch)
     }
-    if (params.callers.contains('MANTA')) {
-        MANTA(ref_ch, fam_bam_ch)
-    }
+//    if (params.callers.contains('MANTA')) {
+//        MANTA(ref_ch, fam_bam_ch)
+//    }
     if (params.callers.contains('QDNASEQ')) {
         QDNASEQ(ref_ch, fam_bam_ch)
     }
