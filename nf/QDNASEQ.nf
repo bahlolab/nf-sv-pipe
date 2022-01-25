@@ -4,14 +4,13 @@ params.caller = 'QDNASEQ'
 include { bins } from './QDNASEQ/bins'
 include { mosdepth } from './QDNASEQ/mosdepth'
 include { call } from './QDNASEQ/call'
-include { set_id } from './common/set_id' addParams(use_id:false)
-include { jasmine_merge } from './common/jasmine_merge'
+include { set_id } from './QDNASEQ/set_id' addParams(use_id:false)
+include { jasmine_merge } from './common/_jasmine_merge'
 include { get_pass_ids } from './common/get_pass_ids'
 include { filter_pass_variants } from './common/filter_pass_variants'
 include { publish_vcf } from './common/publish_vcf'
 
 /* TODO:
-     - transition to jasmine_merge.py
      - exclude regions
  */
 

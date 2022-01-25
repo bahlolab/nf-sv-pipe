@@ -173,7 +173,7 @@ def merge(jasmine_vcfs, records, output):
             # rec.alts = ('<' + sv_type + '>',) # only needed for BND
             rec.pos = mean([x.pos for x in recs])
             rec.stop = mean([x.stop for x in recs])
-            rec.info['SVLEN'] = (mean([x.info['SVLEN'][0] for x in recs if 'SVLEN' in x.info]),)
+            rec.info['SVLEN'] = mean([x.info['SVLEN'] for x in recs if 'SVLEN' in x.info])
             rec.filter.clear()
 
             if any(['PASS' in x.filter for x in recs]):

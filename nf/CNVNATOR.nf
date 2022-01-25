@@ -34,11 +34,10 @@ workflow CNVNATOR {
             call |
             combine(process_ref.out) |
             to_vcf |
-            map { it[1] } |
-            toSortedList() |
-            map { ['ALL', it] } |
-            jasmine_merge |
             map { it[1..2] } |
+            toSortedList() |
+            map { it.transpose() } |
+            jasmine_merge |
             publish_vcf
 
     emit:

@@ -2,6 +2,7 @@
 nextflow.enable.dsl=2
 /*
 TODO:
+ - switch to BCF where possible in intermediate stages
  - exclude regions (e.g. centromeres, gaps)
  - callset merging
     - naive version: just set ids and use bcftools concat
@@ -20,6 +21,7 @@ params.copy_bams = true
 include { path; read_tsv; get_families; date_ymd } from './nf/functions'
 include { copy_ref } from './nf/common/copy_ref'
 include { copy_bams } from './nf/common/copy_bams'
+include { concat_vcf } from './nf/common/concat_vcf'
 include { MANTA } from './nf/MANTA'
 include { QDNASEQ } from './nf/QDNASEQ'
 include { SMOOVE } from './nf/SMOOVE'
@@ -43,16 +45,30 @@ workflow {
 
     if (params.copy_bams) { fam_bam_ch = copy_bams(fam_bam_ch) }
 
+    vcfs = Channel.fromList([])
+    n = 0
+
     if (params.callers.contains('SMOOVE')) {
-        SMOOVE(ref_ch, fam_bam_ch)
+        vcfs = SMOOVE(ref_ch, fam_bam_ch)
+        n = n + 1
     }
-//    if (params.callers.contains('MANTA')) {
-//        MANTA(ref_ch, fam_bam_ch)
-//    }
+    if (params.callers.contains('MANTA')) {
+        vcfs = vcfs.mix(MANTA(ref_ch, fam_bam_ch))
+        n = n + 1
+    }
     if (params.callers.contains('QDNASEQ')) {
-        QDNASEQ(ref_ch, fam_bam_ch)
+        vcfs = vcfs.mix(QDNASEQ(ref_ch, fam_bam_ch))
+        n = n + 1
     }
     if (params.callers.contains('CNVNATOR')) {
-        CNVNATOR(ref_ch, fam_bam_ch)
+        vcfs = vcfs.mix(CNVNATOR(ref_ch, fam_bam_ch))
+        n = n + 1
+    }
+
+    if (n > 1){
+        vcfs |
+            toSortedList |
+            map { it.transpose() } |
+            concat_vcf
     }
 }
