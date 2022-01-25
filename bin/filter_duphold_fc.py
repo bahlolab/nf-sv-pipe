@@ -30,6 +30,13 @@ class VcfWriteProc:
         self.variantFile.write(rec)
 
 
+def first(x):
+    try:
+        return x[0]
+    except TypeError:
+        return x
+
+
 def main(input, output, max_del_fc, min_dup_fc, min_len):
     vf_in = VariantFile(input)
     header = vf_in.header
@@ -39,7 +46,7 @@ def main(input, output, max_del_fc, min_dup_fc, min_len):
         if not rec.filter.keys():
             rec.filter.add('PASS')
         sv_type = rec.info['SVTYPE']
-        if (sv_type == 'DEL' or sv_type == 'DUP') and abs(rec.info['SVLEN'][0]) > min_len:
+        if (sv_type == 'DEL' or sv_type == 'DUP') and abs(first(rec.info['SVLEN'])) > min_len:
             non_ref = [any(s['GT']) for s in rec.samples.values()]
             fc = [s['DHFFC'] for s in rec.samples.values()]
             if any(non_ref):

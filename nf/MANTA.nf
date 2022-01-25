@@ -1,14 +1,4 @@
 
-params.caller = 'MANTA'
-
-include { call } from './MANTA/call'
-include { convert_inv } from './MANTA/convert_inv'
-include { split_sv_types } from './MANTA/split_sv_types'
-include { jasmine_merge } from './MANTA/jasmine_merge'
-include { duphold } from './MANTA/duphold'
-include { vcf_merge } from './MANTA/vcf_merge'
-include { filter_duphold } from './common/filter_duphold'
-include { publish_vcf } from './common/publish_vcf'
 /*
 TODO:
     - BND merging, INV and TRA easier (can convert from BND rep)
@@ -16,6 +6,16 @@ TODO:
 ISSUES:
     - Unresolved INS not properly merged (ie, with LEFTINSSEQ and RIGHTINSSEQ)
 */
+params.caller = 'MANTA'
+
+include { call } from './MANTA/call'
+include { fix_vcf } from './MANTA/fix_vcf'
+//include { convert_inv } from './MANTA/convert_inv'
+include { jasmine_merge } from './common/jasmine_merge'
+include { duphold } from './MANTA/duphold'
+include { vcf_merge } from './MANTA/vcf_merge'
+include { filter_duphold } from './common/filter_duphold'
+include { publish_vcf } from './common/publish_vcf'
 
 workflow MANTA {
     take:
@@ -29,8 +29,7 @@ workflow MANTA {
         groupTuple(by: 0) |
         combine(ref) |
         call |
-//        combine(ref) |
-//        convert_inv |
+        fix_vcf |
         map { it[1..2] } |
         toSortedList() |
         map { it.transpose() } |

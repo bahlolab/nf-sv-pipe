@@ -1,10 +1,8 @@
 
 process publish_vcf {
-    cpus 1
+    cpus 2
     memory '1 GB'
-    time '1 m'
-    container null
-    executor 'local'
+    time '1 h'
     publishDir "output", mode: 'copy'
 
     input:
@@ -17,7 +15,10 @@ process publish_vcf {
     out_vcf = "${params.id}.${params.caller}.vcf.gz"
     out_tbi = out_vcf + '.tbi'
     """
-    ln -s `readlink $vcf` $out_vcf
-    ln -s `readlink $tbi` $out_tbi
+    bcftools query -l $vcf | sort > samples.txt
+    bcftools view $vcf -Ou -S samples.txt |
+        bcftools annotate --threads 2 -Oz -o $out_vcf\\
+            --set-id '${params.caller}_%SVTYPE\\_%CHROM\\_%POS\\_%END'
+    bcftools index -t $out_vcf --threads 2
     """
 }

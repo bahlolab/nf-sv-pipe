@@ -1,38 +1,31 @@
-
+/*
+    Note: INV/BND not currently possible as not handled well by jasmine
+*/
 process jasmine_merge {
     cpus 2
     memory '4 GB'
     time '1 h'
-    publishDir "progress/${params.caller}/jasmine_merge", mode: 'symlink'
-    tag { uid }
+    publishDir "progress/jasmine_merge", mode: 'symlink'
 
     input:
-    tuple val(uid), path(vcfs)
+    tuple path(vcfs), path(indices)
 
     output:
-    tuple val(uid), path(out_vcf), path("${out_vcf}.tbi")
+    tuple path(out_vcf), path("${out_vcf}.csi")
 
     script:
-    out_vcf = params.id + '.' + uid + '.merged.vcf.gz'
+    out_vcf = "$params.id" + '.' + "$params.caller" + '.merged.vcf.gz'
     """
-    gzip -fdk $vcfs
-    echo $vcfs | sed 's:\\.gz::g' | tr ' ' '\\n' > vcf_list.txt
-    
-    jasmine \\
-        file_list=vcf_list.txt \\
-        out_file=merged.vcf \\
-        threads=$task.cpus \\
-        --output_genotypes \\
-        --default_zero_genotype
-        # --normalize_type # causes vcf format errors with bcftools
-    
-    bcftools sort merged.vcf -Ou |
-        bcftools +fill-tags -Oz -o sorted.vcf.gz
-    bcftools query -l sorted.vcf.gz | sed 's:^\\([0-9]*_\\)\\(.*\\):\\1\\2 \\2:' > rename.txt
-    bcftools reheader sorted.vcf.gz --sample rename.txt --output $out_vcf
-    bcftools index -t $out_vcf
-    
-    rm sorted.vcf.gz *.vcf output -r
+    jasmine_merge.py $vcfs \\
+         --jasmine-dir \$(dirname \$(which jasmine)) \\
+         --output $out_vcf \\
+         --sv-type INS \\
+         --sv-type DEL \\
+         --sv-type DUP \\
+         --args 'max_dist_linear=0.20' \\
+         --args 'max_dist=500' \\
+         --args 'min_overlap=0.80' \\
+         --args 'threads=2'
     """
 }
 
