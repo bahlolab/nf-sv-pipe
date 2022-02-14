@@ -14,7 +14,7 @@ process concat_vcf {
     tuple path(out_vcf), path("${out_vcf}.tbi")
 
     script:
-    out_vcf = "${params.id}.merged.vcf.gz"
+    out_vcf = "${params.id}.combined.vcf.gz"
     """
     bcftools concat $vcfs -Ou --allow-overlaps |
         bcftools annotate --remove FORMAT --threads 2 -Oz -o $out_vcf
