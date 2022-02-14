@@ -2,12 +2,10 @@
 
 Nextflow cohort level SV calling pipeline based on Manta, Smoove, CNVnator and Jasmine. This pipeline is a work in progress.
 
-## Installation
-* Clone this repositoty
-
 ## Usage
-* Create and navigate to run working directory
-* Create configuration file in run directory named `nextflow.config`:
+* Clone this repositoty
+* Create and navigate to run directory
+* Create configuration file in run directory named `nextflow.config`, e.g.:
   ```Nextflow
     params {
       // inputs
@@ -23,8 +21,8 @@ Nextflow cohort level SV calling pipeline based on Manta, Smoove, CNVnator and J
     ```
 * **Params**  
   * `id` - Unique name for run. Used to name output files.
-  * `ped` - A [Ped format file](https://gatk.broadinstitute.org/hc/en-us/articles/360035531972-PED-Pedigree-format) describing familial relationships, only first two columns used (family id and individual id).
-  * `bams` - TSV file with first column containing individual ID, second column containing path to indexed BAM file (no header row/  column names).
+  * `ped` - Path to a [Ped format file](https://gatk.broadinstitute.org/hc/en-us/articles/360035531972-PED-Pedigree-format) describing familial relationships, only first two columns used (family id and individual id).
+  * `bams` - Path to TSV file with first column containing individual ID, second column containing path to indexed BAM file (no header row/  column names).
   * `callers` - List of SV callers to use. Currently supported values are "MANTA": [Manta](https://github.com/Illumina/manta), "CNVNATOR": [CNVnator](https://github.com/abyzovlab/CNVnator) and "SMOOVE": [Smoove](https://github.com/brentp/smoove) (lumpy).
 * First run:  
 `nextflow run /PATH/TO/nf-sv-pipe`
