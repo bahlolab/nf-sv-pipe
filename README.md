@@ -1,4 +1,4 @@
-# nf-cavalier
+# nf-sv-pipe
 
 Nextflow cohort level SV calling pipeline based on Manta, Smoove, CNVnator and Jasmine. This pipeline is a work in progress.
 
