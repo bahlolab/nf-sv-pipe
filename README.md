@@ -5,6 +5,7 @@ Nextflow cohort level SV calling pipeline based on Manta, Smoove, CNVnator and J
 ## Usage
 * Clone this repositoty
 * Create and navigate to run directory
+* See [bahlolab/nextflow-config](https://github.com/bahlolab/nextflow-config) for generic Nextflow configuration for Milton/SLURM.
 * Create configuration file in run directory named `nextflow.config`, e.g.:
   ```Nextflow
     params {
