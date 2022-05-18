@@ -1,7 +1,7 @@
 
 process merge {
     cpus 1
-    memory '1 GB'
+    memory '4 GB'
     time '1 h'
     publishDir 'progress/SMOOVE/merge', mode: 'symlink'
     container 'quay.io/biocontainers/smoove:0.2.5--0'

@@ -2,7 +2,7 @@
 process call {
     cpus 2
     memory '10 GB'
-    time '6 h'
+    time '12 h'
     container 'quay.io/biocontainers/smoove:0.2.5--0'
     publishDir 'progress/SMOOVE/call', mode: 'symlink'
     tag { sam }

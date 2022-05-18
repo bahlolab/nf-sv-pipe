@@ -3,8 +3,8 @@
 */
 process jasmine_merge {
     cpus 2
-    memory '4 GB'
-    time '1 h'
+    memory '16 GB'
+    time '2 h'
     publishDir "progress/jasmine_merge", mode: 'symlink'
 
     input:
