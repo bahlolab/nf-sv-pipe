@@ -15,8 +15,8 @@ params.ref_fasta = ''
 params.assembly = 'hg38'
 params.callers = ['SMOOVE', 'MANTA', 'CNVNATOR']
 //params.callers = ['MANTA', 'QDNASEQ', 'SMOOVE', 'CNVNATOR']
-params.copy_ref = true
-params.copy_bams = true
+params.copy_ref = false
+params.copy_bams = false
 
 include { path; read_tsv; get_families; date_ymd } from './nf/functions'
 include { copy_ref } from './nf/common/copy_ref'
