@@ -1,17 +1,17 @@
 
 process call {
     cpus 2
-    memory '10 GB'
+    memory '16 GB'
     time '12 h'
     container 'quay.io/biocontainers/smoove:0.2.5--0'
-    publishDir 'progress/SMOOVE/call', mode: 'symlink'
-    tag { sam }
+    publishDir "${params.progdir}/SMOOVE/call", mode: 'symlink'
+    tag "$sam"
 
 
     input:
         tuple val(sam), path(bam), path(bai), path(ref_fa), path(ref_fai), path(exclude)
 
-    output:
+    output: 
         tuple val(sam), path(vcf), path("${vcf}.csi")
 
     script:

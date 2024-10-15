@@ -2,8 +2,8 @@
 process copy_bams {
     cpus 1
     memory '1 GB'
-    time '1 h'
-    publishDir 'progress/copy_bams', mode: 'symlink'
+    time '6 h'
+    publishDir "${params.progdir}/copy_bams", mode: 'symlink'
     container null
     tag { sam }
 

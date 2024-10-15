@@ -4,7 +4,7 @@ process bins {
     memory '1 GB'
     time '1 h'
     label 'QDNASEQ'
-    publishDir "progress/QDNASEQ/bins", mode: 'symlink'
+    publishDir "${params.progdir}/QDNASEQ/bins", mode: 'symlink'
 
     output:
     path('bins.bed.gz')

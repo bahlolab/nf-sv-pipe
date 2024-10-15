@@ -5,7 +5,7 @@ process fix_vcf {
     cpus 1
     memory '1 GB'
     time '1 h'
-    publishDir "progress/$params.caller/fix_vcf", mode: 'symlink'
+    publishDir "${params.progdir}/$params.caller/fix_vcf", mode: 'symlink'
     tag { id }
 
     input:

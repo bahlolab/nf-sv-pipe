@@ -2,11 +2,10 @@
 process call {
     cpus 1
     memory '16 GB'
-    time '2 h'
+    time '4 h'
     container 'quay.io/biocontainers/cnvnator:0.4.1--h9c7f56d_2'
-    publishDir 'progress/CNVNATOR/call', mode: 'symlink'
+    publishDir "${params.progdir}/CNVNATOR/call", mode: 'symlink'
     tag { sam }
-
 
     input:
         tuple val(sam), path(bam), path(bai), val(chrs), path(ref)

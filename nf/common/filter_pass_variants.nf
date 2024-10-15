@@ -4,7 +4,7 @@ process filter_pass_variants {
     cpus 1
     memory '1 GB'
     time '1 h'
-    publishDir "progress/${params.caller}/filter_pass_variants", mode: 'symlink'
+    publishDir "${params.progdir}/${params.caller}/filter_pass_variants", mode: 'symlink'
 
     input:
         tuple path(vcf), path(id_files)

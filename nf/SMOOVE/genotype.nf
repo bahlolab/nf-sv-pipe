@@ -4,7 +4,7 @@ process genotype {
     memory '4 GB'
     time '4 h'
     tag { sam }
-    publishDir 'progress/SMOOVE/genotype', mode: 'symlink'
+    publishDir "${params.progdir}/SMOOVE/genotype", mode: 'symlink'
     container 'quay.io/biocontainers/smoove:0.2.5--0'
 
     input:
@@ -22,6 +22,13 @@ process genotype {
             --name ${sam} \\
             --outdir . \\
             --fasta $ref_fa \\
-            --vcf $vcf 
+            --vcf $vcf
+        # work around for smooth duplicate record bug
+        (
+            bcftools view -h $out_vcf
+            bcftools view -H $out_vcf | awk '!/^#/ {key = \$1\$2\$3\$4\$5; if (!seen[key]++) print \$0}'
+        ) | bcftools view -Oz -o tmp.vcf.gz
+        mv tmp.vcf.gz $out_vcf
+        bcftools index -f $out_vcf
         """
 }

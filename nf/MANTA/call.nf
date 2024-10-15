@@ -4,7 +4,7 @@ process call {
     memory '8 GB'
     time '24 h'
     tag { fam }
-    publishDir "progress/MANTA/call", mode: 'symlink'
+    publishDir "${params.progdir}/MANTA/call", mode: 'symlink'
     container 'quay.io/biocontainers/manta:1.6.0--h9ee0642_1'
 
     input:

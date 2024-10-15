@@ -3,7 +3,7 @@ process split_sv_types {
     cpus 1
     memory '1 GB'
     time '1 h'
-    publishDir "progress/MANTA/split_sv_types", mode: 'symlink'\
+    publishDir "${params.progdir}/MANTA/split_sv_types", mode: 'symlink'\
     tag { fam }
 
     input:

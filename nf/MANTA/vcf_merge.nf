@@ -3,7 +3,7 @@ process vcf_merge {
     cpus 2
     memory '2 GB'
     time '1 h'
-    publishDir "progress/MANTA/vcf_merge", mode: 'symlink'
+    publishDir "${params.progdir}/MANTA/vcf_merge", mode: 'symlink'
 
     input:
         path(list)

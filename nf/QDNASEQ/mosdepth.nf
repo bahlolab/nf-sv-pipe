@@ -7,7 +7,7 @@ process mosdepth {
     memory '4 GB'
     time '1 h'
     tag { sam }
-    publishDir "progress/QDNASEQ/mosdepth", mode: 'symlink'
+    publishDir "${params.progdir}/QDNASEQ/mosdepth", mode: 'symlink'
     container 'quay.io/biocontainers/mosdepth:0.3.2--h01d7912_0'
 
     input:

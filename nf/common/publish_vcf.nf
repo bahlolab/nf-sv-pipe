@@ -3,7 +3,7 @@ process publish_vcf {
     cpus 2
     memory '1 GB'
     time '1 h'
-    publishDir "output", mode: 'copy'
+    publishDir "${params.outdir}", mode: 'copy'
 
     input:
     tuple path(vcf), path(tbi)

@@ -3,7 +3,7 @@ process to_vcf {
     cpus 1
     memory '1 GB'
     time '1 h'
-    publishDir 'progress/CNVNATOR/to_vcf', mode: 'symlink'
+    publishDir "${params.progdir}/CNVNATOR/to_vcf", mode: 'symlink'
     tag { sam }
 
     input:

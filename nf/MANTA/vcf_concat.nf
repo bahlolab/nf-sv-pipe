@@ -5,7 +5,7 @@ process vcf_concat {
     cpus 1
     memory '1 GB'
     time '1 h'
-    publishDir "progress/MANTA/manta_vcf_concat", mode: 'symlink'
+    publishDir "${params.progdir}/MANTA/manta_vcf_concat", mode: 'symlink'
 
     input:
         tuple path(vcfs), path(indices)

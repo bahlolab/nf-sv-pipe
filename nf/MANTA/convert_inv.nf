@@ -4,7 +4,7 @@ process convert_inv {
     memory '1 GB'
     time '1 h'
     tag { fam }
-    publishDir "progress/MANTA/convert_inv", mode: 'symlink'
+    publishDir "${params.progdir}/MANTA/convert_inv", mode: 'symlink'
     container 'quay.io/biocontainers/manta:1.6.0--h9ee0642_1'
 
     input:

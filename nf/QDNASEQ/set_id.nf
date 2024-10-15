@@ -4,7 +4,7 @@ process set_id {
     cpus 1
     memory '1 GB'
     time '1 h'
-    publishDir "progress/$params.caller/set_id", mode: 'symlink'
+    publishDir "${params.progdir}/$params.caller/set_id", mode: 'symlink'
     tag { id }
 
     input:

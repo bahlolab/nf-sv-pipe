@@ -7,7 +7,7 @@ process filter_duphold {
     cpus 1
     memory '1 GB'
     time '1 h'
-    publishDir "progress/${params.caller}/filter_duphold", mode: 'symlink'
+    publishDir "${params.progdir}/${params.caller}/filter_duphold", mode: 'symlink'
 
     input:
         path(vcf)

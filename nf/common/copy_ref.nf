@@ -3,7 +3,7 @@ process copy_ref {
     cpus 1
     memory '1 GB'
     time '1 h'
-    publishDir 'progress/copy_ref', mode: 'symlink'
+    publishDir "${params.progdir}/copy_ref", mode: 'symlink'
     container null
 
     input:

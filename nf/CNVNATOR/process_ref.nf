@@ -3,7 +3,7 @@ process process_ref {
     cpus 1
     memory '1 GB'
     time '1 h'
-    publishDir 'progress/CNVNATOR/process_ref', mode: 'symlink'
+    publishDir "${params.progdir}/CNVNATOR/process_ref", mode: 'symlink'
 
     input:
         tuple path(ref), path(fai), val(chrs)
