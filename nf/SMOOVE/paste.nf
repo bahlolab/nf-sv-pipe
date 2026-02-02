@@ -1,7 +1,7 @@
 
 process paste {
-    cpus 1
-    memory '4 GB'
+    cpus 2
+    memory '16 GB'
     time '1 h'
     publishDir "${params.progdir}/SMOOVE/paste", mode: 'symlink'
     container 'quay.io/biocontainers/smoove:0.2.5--0'

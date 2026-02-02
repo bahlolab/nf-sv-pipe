@@ -1,8 +1,6 @@
 
 process copy_bams {
-    cpus 1
-    memory '1 GB'
-    time '6 h'
+    label 'C2M2T8'
     publishDir "${params.progdir}/copy_bams", mode: 'symlink'
     container null
     tag { sam }

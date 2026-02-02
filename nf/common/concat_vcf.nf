@@ -2,9 +2,7 @@
 // Remove format to resolve inconsistencies between callers
 
 process concat_vcf {
-    cpus 2
-    memory '1 GB'
-    time '1 h'
+    label 'C2M2T2'
     publishDir "${params.outdir}", mode: 'copy'
 
     input:
@@ -17,7 +15,7 @@ process concat_vcf {
     out_vcf = "${params.id}.combined.vcf.gz"
     """
     bcftools concat $vcfs -Ou --allow-overlaps |
-        bcftools annotate --remove FORMAT --threads 2 -Oz -o $out_vcf
-    bcftools index -t --threads 2 $out_vcf
+        bcftools annotate --remove FORMAT --threads $task.cpus -Oz -o $out_vcf
+    bcftools index -t --threads $task.cpus $out_vcf
     """
 }

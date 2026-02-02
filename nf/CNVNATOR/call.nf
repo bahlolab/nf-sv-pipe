@@ -1,9 +1,7 @@
 
 process call {
-    cpus 1
-    memory '16 GB'
-    time '4 h'
-    container 'quay.io/biocontainers/cnvnator:0.4.1--h9c7f56d_2'
+    label 'C2M16T4'
+    label 'cnvnator'
     publishDir "${params.progdir}/CNVNATOR/call", mode: 'symlink'
     tag { sam }
 

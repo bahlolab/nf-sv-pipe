@@ -3,7 +3,7 @@
 */
 process jasmine_merge {
     cpus 2
-    memory '16 GB'
+    memory '32 GB'
     time '2 h'
     publishDir "${params.progdir}/jasmine_merge", mode: 'symlink'
 

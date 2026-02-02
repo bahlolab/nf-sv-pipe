@@ -1,8 +1,6 @@
 
 process process_ref {
-    cpus 1
-    memory '1 GB'
-    time '1 h'
+    label 'C1M1T1'
     publishDir "${params.progdir}/CNVNATOR/process_ref", mode: 'symlink'
 
     input:

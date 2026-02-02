@@ -1,8 +1,8 @@
 
 process call {
     cpus 8
-    memory '8 GB'
-    time '24 h'
+    memory '12 GB'
+    time '48 h'
     tag { fam }
     publishDir "${params.progdir}/MANTA/call", mode: 'symlink'
     container 'quay.io/biocontainers/manta:1.6.0--h9ee0642_1'
@@ -21,7 +21,7 @@ process call {
             --runDir `pwd -P` \\
             --bam ${bam.join(' --bam ')}
         
-        ./runWorkflow.py -j $task.cpus -g 8
+        ./runWorkflow.py -j $task.cpus -g ${task.memory.toGiga().intValue()}
     
         mv ./results/variants/diploidSV.vcf.gz $out_vcf
         mv ./results/variants/diploidSV.vcf.gz.tbi ${out_vcf}.tbi

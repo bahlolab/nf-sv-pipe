@@ -1,8 +1,6 @@
 
 process to_vcf {
-    cpus 1
-    memory '1 GB'
-    time '1 h'
+    label 'C1M1T1'
     publishDir "${params.progdir}/CNVNATOR/to_vcf", mode: 'symlink'
     tag { sam }
 

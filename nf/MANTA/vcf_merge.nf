@@ -1,7 +1,7 @@
 
 process vcf_merge {
     cpus 2
-    memory '2 GB'
+    memory '8 GB'
     time '1 h'
     publishDir "${params.progdir}/MANTA/vcf_merge", mode: 'symlink'
 
