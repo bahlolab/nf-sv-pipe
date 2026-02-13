@@ -6,26 +6,26 @@ stopifnot(
     require(stringr)
 )
 
-bin_fn   <- commandArgs(trailingOnly = TRUE)[1]
-sm_cov   <- commandArgs(trailingOnly = TRUE)[-1]
+bin_fn  <- commandArgs(trailingOnly = TRUE)[1]
+snorm   <- commandArgs(trailingOnly = TRUE)[-1]
 
 bins <- readRDS(bin_fn)
-samples <- sm_cov  %>% basename()  %>% str_remove('\\.coverage\\.rds$')
-nsam <- length(sm_cov)
+samples <- snorm  %>% basename() %>% str_remove('\\.snorm\\.rds$')
+nsam <- length(snorm)
 nbin <- nrow(bins)
 
-COV <- matrix(0, nrow = nbin, ncol = nsam)
-colnames(COV) <- samples
+SNORM <- matrix(0, nrow = nbin, ncol = nsam)
+colnames(SNORM) <- samples
 
 for (i in 1:nsam) {
-    COV[,i] <- readRDS(sm_cov[i])
+    SNORM[,i] <- readRDS(snorm[i])
 }
 
-row_med <- rowMedians(COV, na.rm = TRUE)
-row_mad <- rowMads(COV, constant = 1.4826, na.rm = TRUE)
+row_med <- rowMedians(SNORM, na.rm = TRUE)
+row_mad <- rowMads(SNORM, constant = 1.4826, na.rm = TRUE)
 
-CN <- 2 * sweep(COV, 1, row_med, "/")
-Z <- sweep(COV, 1, row_med, "-") %>% sweep(1, row_mad, "/")
+CN <- 2 * sweep(SNORM, 1, row_med, "/")
+Z <- sweep(SNORM, 1, row_med, "-") %>% sweep(1, row_mad, "/")
 
 for (sm in samples) {
     bins %>%

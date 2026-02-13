@@ -12,11 +12,11 @@ process CALL {
     tuple val(sample), path(bnorm)
 
     output:
-    tuple val(sample), path("${sample}.CNVs.tsv")
+    tuple val(sample), path("${sample}.vcf")
     
 
     script:
     """
-    call.R $bnorm $sample
+    call.R $sample $bnorm 
     """
 }

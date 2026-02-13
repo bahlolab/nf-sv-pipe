@@ -10,12 +10,11 @@ process SNORM {
     tuple val(sample), path(bed)
 
     output:
-    path "${sample}.bins.rds"    , emit: bins
-    path "${sample}.coverage.rds", emit: coverage
-    
+    path "${sample}.shard_*.bins.rds" , emit: bins
+    path "${sample}.shard_*.snorm.rds", emit: snorm
 
     script:
     """
-    snorm.R $bed $sample
+    snorm.R $bed $sample $params.n_phases $params.n_shards
     """
 }

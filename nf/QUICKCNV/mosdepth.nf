@@ -5,6 +5,7 @@ process MOSDEPTH {
     time   { 2 * task.attempt + ' h'  }
     label  'mosdepth'
     tag    "$sample"
+    maxForks 50
 
     input:
     tuple val(sample), path(bam), path(bai)

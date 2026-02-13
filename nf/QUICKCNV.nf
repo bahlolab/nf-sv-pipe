@@ -1,11 +1,16 @@
 
 params.caller = 'QUICKCNV'
-params.bin_size = 10000
+params.bin_size = 500
+params.n_phases = 4
+params.n_shards = 50
 
-include { MOSDEPTH } from './QUICKCNV/mosdepth'
-include { SNORM    } from './QUICKCNV/snorm'
-include { BNORM    } from './QUICKCNV/bnorm'
-include { CALL     } from './QUICKCNV/call'
+include { MOSDEPTH      } from './QUICKCNV/mosdepth'
+include { SNORM         } from './QUICKCNV/snorm'
+include { BNORM         } from './QUICKCNV/bnorm'
+include { CALL          } from './QUICKCNV/call'
+include { VCF_HEADER    } from './QUICKCNV/vcf_header'
+include { jasmine_merge as JASMINE } from './common/jasmine_merge'
+include { publish_vcf as PUBLISH   } from './common/publish_vcf'
 
 workflow QUICKCNV {
     take:
@@ -24,15 +29,47 @@ workflow QUICKCNV {
         MOSDEPTH.out
     )
 
+    bins = SNORM.out.bins
+        .flatten()
+        .map { [(it.name =~ /\.shard_([0-9]+)\./)[0][1], it] }
+        .groupTuple(by:0)
+        .map { [it[0], it[1].sort { it.name }[0] ] }
+    
+    snorm = SNORM.out.snorm 
+        .flatten()
+        .map { [(it.name =~ /\.shard_([0-9]+)\./)[0][1], it] }
+        .groupTuple(by:0)
+        .map { [it[0], it[1].sort { it.name } ] }
+
     BNORM(
-        SNORM.out.bins.toSortedList { it.name }.map{it[0]},
-        SNORM.out.coverage.toSortedList { it.name },
+        bins.combine(snorm, by: 0)
     )
 
     CALL(
         BNORM.out
             .flatten()
-            .map { [it.name.replaceAll('.bnorm.rds', ''), it] }
+            .map { [(it.name =~ /(.+)\.shard_[0-9]+\.bnorm\.rds/)[0][1], it] }
+            .groupTuple(by:0)
+            .map { [it[0], it[1].sort { it.name } ] }
+    )
+
+    VCF_HEADER(
+        CALL.out,
+        ref
+    )
+
+    VCF_HEADER.out
+            .toSortedList()
+            .map {it.transpose() }
+            
+    JASMINE(
+        VCF_HEADER.out
+            .toSortedList()
+            .map {it.transpose() }
+    )
+
+    PUBLISH(
+        JASMINE.out
     )
 
     emit:
