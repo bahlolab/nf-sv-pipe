@@ -12,6 +12,7 @@ output <- commandArgs(trailingOnly = TRUE)[1]
 inputs <- commandArgs(trailingOnly = TRUE)[-1]
 
 MIN_RUN <- 5L
+# MAX_AUTOCOR <- 0.5 # double MIN_RUN if greater than this
 MAX_GAP <- 1L
 MIN_P   <- 0.01
 MAX_DEL <- 1.5
@@ -27,7 +28,7 @@ bnorm <- map_df(inputs, readRDS)
 calls_1 <-
     bnorm %>%
     filter(
-        !is.na(CN),
+        is.finite(Z),
     ) %>% 
     mutate(
         IDX = row_number(),
@@ -124,31 +125,49 @@ calls_3 <-
             TRUE ~ "1/1",
         )
     )  %>% 
-    arrange(chrom, start, end)
+    arrange(chrom, start, end)  %>% 
+    mutate(sample = output, .before = 1)
 
-vcf_lines <- c(
-  "##fileformat=VCFv4.2",
-  '##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">',
-  '##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the variant">',
-  '##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="Length of structural variant">',
-  '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">',
-  '##FORMAT=<ID=CN,Number=1,Type=Float,Description="Copy number estimate">',
-  str_c("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t", output),
-  calls_3 %>%
-    transmute(
-      CHROM  = chrom,
-      POS    = as.integer(start) + 1L,
-      ID     = '.',
-      REF    = "N",
-      ALT    = str_c("<", SVTYPE, ">"),
-      QUAL   = ".",
-      FILTER = "PASS",
-      INFO   = str_c("SVTYPE=", SVTYPE, ";END=", end, ";SVLEN=", if_else(SVTYPE == "DEL", -SVLEN, SVLEN)),
-      FORMAT = "GT:CN",
-      SAMPLE = str_c(GT, ":", formatC(CN, format = "f", digits = 3))
-    ) %>%
-    mutate(line = str_c(CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT, SAMPLE, sep = "\t")) %>%
-    pull(line)
-)
+saveRDS(calls_3, paste0(output, ".calls.rds"))
 
-write_lines(vcf_lines, str_c(output, '.vcf'))
+# for breakpoint refinement
+width <- (bnorm$end[1] - bnorm$start[1])
+bind_rows(
+    calls_3 %>%
+        transmute(chrom, end = start + width, start = start - width),
+    calls_3 %>%
+        transmute(chrom, start = end - width, end = end + width),
+) %>%
+    select(chrom, start, end) %>%
+    arrange_all() %>%
+    transmute(reg = paste0(chrom, ":", start, "-", end)) %>% 
+    write_tsv(paste0(output, ".bpt.txt"), col_names = FALSE)
+
+
+
+# vcf_lines <- c(
+#   "##fileformat=VCFv4.2",
+#   '##INFO=<ID=SVTYPE,Number=1,Type=String,Description="Type of structural variant">',
+#   '##INFO=<ID=END,Number=1,Type=Integer,Description="End position of the variant">',
+#   '##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="Length of structural variant">',
+#   '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">',
+#   '##FORMAT=<ID=CN,Number=1,Type=Float,Description="Copy number estimate">',
+#   str_c("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t", output),
+#   calls_3 %>%
+#     transmute(
+#       CHROM  = chrom,
+#       POS    = as.integer(start) + 1L,
+#       ID     = '.',
+#       REF    = "N",
+#       ALT    = str_c("<", SVTYPE, ">"),
+#       QUAL   = ".",
+#       FILTER = "PASS",
+#       INFO   = str_c("SVTYPE=", SVTYPE, ";END=", end, ";SVLEN=", if_else(SVTYPE == "DEL", -SVLEN, SVLEN)),
+#       FORMAT = "GT:CN",
+#       SAMPLE = str_c(GT, ":", formatC(CN, format = "f", digits = 3))
+#     ) %>%
+#     mutate(line = str_c(CHROM, POS, ID, REF, ALT, QUAL, FILTER, INFO, FORMAT, SAMPLE, sep = "\t")) %>%
+#     pull(line)
+# )
+
+# write_lines(vcf_lines, str_c(output, '.vcf'))

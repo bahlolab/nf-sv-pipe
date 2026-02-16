@@ -12,8 +12,8 @@ process CALL {
     tuple val(sample), path(bnorm)
 
     output:
-    tuple val(sample), path("${sample}.vcf")
-    
+    tuple val(sample), path("${sample}.calls.rds"), emit: calls
+    tuple val(sample), path("${sample}.bpt.txt")  , emit: reg
 
     script:
     """

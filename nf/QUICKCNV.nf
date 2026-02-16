@@ -4,13 +4,16 @@ params.bin_size = 500
 params.n_phases = 4
 params.n_shards = 50
 
-include { MOSDEPTH      } from './QUICKCNV/mosdepth'
-include { SNORM         } from './QUICKCNV/snorm'
-include { BNORM         } from './QUICKCNV/bnorm'
-include { CALL          } from './QUICKCNV/call'
-include { VCF_HEADER    } from './QUICKCNV/vcf_header'
-include { jasmine_merge as JASMINE } from './common/jasmine_merge'
-include { publish_vcf as PUBLISH   } from './common/publish_vcf'
+include { MOSDEPTH   } from './QUICKCNV/mosdepth'
+include { SNORM      } from './QUICKCNV/snorm'
+include { BNORM      } from './QUICKCNV/bnorm'
+include { CALL       } from './QUICKCNV/call'
+include { MERGE      } from './QUICKCNV/merge'
+include { BPT_DEPTH  } from './QUICKCNV/bpt_depth'
+include { REFINE     } from './QUICKCNV/refine'
+// include { VCF_HEADER    } from './QUICKCNV/vcf_header'
+// include { jasmine_merge as JASMINE } from './common/jasmine_merge'
+// include { publish_vcf as PUBLISH   } from './common/publish_vcf'
 
 workflow QUICKCNV {
     take:
@@ -53,24 +56,38 @@ workflow QUICKCNV {
             .map { [it[0], it[1].sort { it.name } ] }
     )
 
-    VCF_HEADER(
-        CALL.out,
-        ref
+    BPT_DEPTH(
+        sam_bam_ch.combine(CALL.out.reg, by:0)
     )
 
-    VCF_HEADER.out
-            .toSortedList()
-            .map {it.transpose() }
+    REFINE(
+        CALL.out.calls.combine(BPT_DEPTH.out, by:0)
+    )
+
+    // CALL.out.bed.first().view()
+
+    // MERGE(
+    //     CALL.out.collect()
+    // )
+
+    // VCF_HEADER(
+    //     CALL.out.vcf,
+    //     ref
+    // )
+
+    // VCF_HEADER.out
+    //         .toSortedList()
+    //         .map {it.transpose() }
             
-    JASMINE(
-        VCF_HEADER.out
-            .toSortedList()
-            .map {it.transpose() }
-    )
+    // JASMINE(
+    //     VCF_HEADER.out
+    //         .toSortedList()
+    //         .map {it.transpose() }
+    // )
 
-    PUBLISH(
-        JASMINE.out
-    )
+    // PUBLISH(
+    //     JASMINE.out
+    // )
 
     emit:
     null
