@@ -8,6 +8,7 @@ process SNORM {
 
     input:
     tuple val(sample), path(bed)
+    path(nuc)
 
     output:
     path "${sample}.shard_*.bins.rds" , emit: bins
@@ -15,6 +16,6 @@ process SNORM {
 
     script:
     """
-    snorm.R $bed $sample $params.n_phases $params.n_shards
+    snorm.R $bed $sample $params.n_phases $params.n_shards $nuc
     """
 }

@@ -151,7 +151,8 @@ CALLS %>%
     precise_left = !is.na(new_start),
     precise_right= !is.na(new_end),
     start = if_else(!is.na(new_start), new_start, start),
-    end   = if_else(!is.na(new_end), new_end, end)
+    end   = if_else(!is.na(new_end), new_end, end),
+    SVLEN = end - start,
   ) %>% 
   select(
     -IDX, -new_start, -new_end

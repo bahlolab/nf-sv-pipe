@@ -12,10 +12,10 @@ process REFINE {
     tuple val(sample), path(calls), path(bpt_depth)
 
     output:
-    tuple val(sample), path("${sample}.refined_calls.rds"), emit: calls
+    path("${sample}.refined_calls.rds"), emit: calls
 
     script:
     """
-    refine.R $sample $calls $bpt_depth ${params.bin_size*params.n_phases*2} $params.bin_size
+    refine.R $sample $calls $bpt_depth ${params.bin_size*params.n_phases} $params.bin_size
     """
 }
