@@ -3,7 +3,7 @@ process duphold {
     cpus 2
     memory '2 GB'
     time '4 h'
-    container = 'brentp/duphold:v0.2.3'
+    container 'brentp/duphold:v0.2.3'
     publishDir "${params.progdir}/MANTA/duphold", mode: 'symlink'
     tag { sam }
 

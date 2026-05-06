@@ -1,7 +1,7 @@
 
 process SNORM {
     cpus     2
-    memory { 4 * task.attempt + ' GB' }
+    memory { 8 * task.attempt + ' GB' }
     time   { 2 * task.attempt + ' h'  }
     tag    "$sample"
     container null

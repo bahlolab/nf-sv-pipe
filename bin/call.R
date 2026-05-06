@@ -13,15 +13,16 @@ inputs <- commandArgs(trailingOnly = TRUE)[-1]
 
 MIN_SEED <- 3L # CNVs grown out from seeds of a least 3 adjacent bins
 MIN_CALL <- 5L # number of bins required to keep a call
-MAX_GAP <- 0.10
+MAX_GAP <- 0.20
+MAX_GAP_RATIO <- 10
 MIN_P   <- 0.001
 MAX_DEL <- 1.5
 MIN_DUP <- 2.5
 MAX_DUP <- 5
 
-# hard limit on number of class - most samples should be unaffected
-MAX_N_DEL <- 250
-MAX_N_DUP <- 250
+# hard limit on number of calls
+MAX_N_DEL <- Inf # 250
+MAX_N_DUP <- Inf # 250
 
 bnorm <- map_df(inputs, readRDS) %>% arrange(phase, chrom, start)
 width <- bnorm$end[1] - bnorm$start[1]
@@ -64,8 +65,24 @@ seeds <-
     med_CN = median(CN),
     CN = list(CN),
     n = n(),
-    .groups = 'drop'
+    .groups = "drop"
   )
+
+if (nrow(seeds) == 0) {
+  tibble(
+    sample = character(),
+    chrom = character(),
+    start = integer(),
+    end = integer(),
+    SVTYPE = character(),
+    SVLEN = integer(),
+    CN = integer(),
+    SNR = numeric(),
+    GT = character()
+  ) %>% saveRDS(paste0(output, ".calls.rds"))
+  file.create(paste0(output, ".bpt.txt"))
+  q('no')
+}
 
 # merge adjacent SEED regions to give calls per phase
 phase_calls <-
@@ -80,7 +97,11 @@ phase_calls <-
         data %>%
         mutate(
           GAP = (start - lag(end)) / (end - lag(start)),
-          BREAK = SVTYPE != lag(SVTYPE) | abs(med_CN - lag(med_CN)) > 0.25 | GAP > MAX_GAP,
+          GAP_RATIO = pmax(
+            (start - lag(end)) / (end - start),
+            (start - lag(end)) / (lag(end) - lag(start))
+          ),
+          BREAK = SVTYPE != lag(SVTYPE) | abs(med_CN - lag(med_CN)) > 0.25 | GAP > MAX_GAP | GAP_RATIO > MAX_GAP_RATIO,
           SEG = cumsum(replace_na(BREAK, TRUE)),
         ) %>%
         group_by(SEG) %>%
@@ -104,11 +125,12 @@ phase_calls <-
     return(data)
   })) %>%
   unnest(data) %>% 
-  select(-SEG)
+  select(-any_of('SEG'))
 
 # merge calls across phases greedily
 merged <-
-  phase_calls %>% 
+  phase_calls %>%
+  filter(SVTYPE %in% c('DEL', 'DUP')) %>% 
   select(chrom, SVTYPE, r_CN, start, end) %>% 
   (function(x) {
     while(TRUE) {
@@ -278,5 +300,3 @@ breakpoint_windows <-
   transmute(reg = paste0(chrom, ":", start, "-", end))
 
 write_tsv(breakpoint_windows, paste0(output, ".bpt.txt"), col_names = FALSE)
-
-

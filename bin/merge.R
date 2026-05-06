@@ -6,14 +6,14 @@ stopifnot(
 
 output   <- commandArgs(trailingOnly = TRUE)[1]
 sm_calls <- commandArgs(trailingOnly = TRUE)[-1]
-# sm_calls <- list.files('.', pattern = '.rds', full.names = T)
+# sm_calls <- list.files('/vast/scratch/users/munro.j/nextflow/work/a0/8dd41ecd4859ae56f9c723b851cb82/', pattern = '.rds', full.names = T)
 
 # merge greedily
 MIN_JACC <- 0.9
 # recluster if any  pairwise here
 JAC_BRK  <- 0.75
 
-samples <- sm_calls  %>% basename() %>% str_remove('\\.refined_calls\\.rds$')
+samples <- sm_calls  %>% basename() %>% str_remove('\\.(refined_)?calls\\.rds$')
 
 # calculate jaccard index
 jaccard <- function(start1, end1, start2, end2) {
@@ -62,7 +62,7 @@ merge_calls <- function(calls) {
               return(x)
             }
             return(c(x, y))
-          }) %>% 
+          }, .init = list(integer())) %>% 
           (function(x) tibble(IDX = x, set = seq_along(x))) %>% 
           unnest(IDX) %>% 
           (function(x) inner_join(
@@ -118,7 +118,10 @@ merge_calls <- function(calls) {
             )
           })
           ) %>% 
-          unnest(data) %>% 
+          unnest(data) %>%
+          select(-any_of('data')) %>% 
+          bind_rows(tibble(sub_set = integer())) %>%
+          mutate(sub_set = replace_na(sub_set, 1L)) %>% 
           mutate(set = str_c(set, sub_set, sep = '-'))
       })
     ) %>% 
@@ -129,7 +132,8 @@ merge_calls <- function(calls) {
 
 CALLS <-
   map_df(sm_calls, readRDS) %>%
-  mutate(precise = precise_left & precise_right) %>% 
+  # mutate(precise = precise_left & precise_right) %>% 
+  mutate(precise = FALSE) %>% 
   mutate(
     SVLEN = end - start,
     IDX = row_number()
@@ -223,6 +227,9 @@ MERGED_CALLS_LONG <-
          AF = AC / AN,
          .after = precise
   ) %>% 
+  ungroup() %>% 
+  group_by(chrom, start, end, SVTYPE, SVLEN, precise, AC, AN, AF, sample) %>% 
+  slice(1) %>% 
   ungroup()
 
 saveRDS(MERGED_CALLS_LONG, 'merged_calls.rds')
@@ -237,7 +244,7 @@ VCF <-
     names_from = sample,
     values_from = format,
     values_fill = '0/0:.',
-  ) %>%
+  ) %>% 
   filter(is.na(dummy)) %>% 
   (function(x) {
     transmute(
@@ -270,7 +277,8 @@ c(
   '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">',
   '##FORMAT=<ID=CN,Number=1,Type=Float,Description="Copy number estimate">',
   str_c("#", str_c(colnames(VCF), collapse = "\t"))
-) %>% write_lines(output)
+) %>% 
+  write_lines(output)
 
 write_tsv(VCF, output, col_names = F, append = TRUE)
 

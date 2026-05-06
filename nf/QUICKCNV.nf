@@ -1,11 +1,11 @@
 
 params.caller = 'QUICKCNV'
-params.bin_size = 500
+params.bin_size = 250
 params.n_phases = 4
 params.n_shards = 50
 
 include { MOSDEPTH   } from './QUICKCNV/mosdepth'
-include { NUC         } from './QUICKCNV/nuc'
+include { NUC        } from './QUICKCNV/nuc'
 include { SNORM      } from './QUICKCNV/snorm'
 include { BNORM      } from './QUICKCNV/bnorm'
 include { CALL       } from './QUICKCNV/call'
@@ -13,6 +13,7 @@ include { BPT_DEPTH  } from './QUICKCNV/bpt_depth'
 include { REFINE     } from './QUICKCNV/refine'
 include { MERGE      } from './QUICKCNV/merge'
 include { FIXVCF     } from './QUICKCNV/fixvcf'
+include { publish_vcf } from './common/publish_vcf'
 
 
 workflow QUICKCNV {
@@ -61,18 +62,9 @@ workflow QUICKCNV {
             .map { [it[0], it[1].sort { it.name } ] }
     )
 
-    // BNORM.out.flatten().map { it.toString() }.collectFile(name: './bnorm.txt', newLine: true)
-
-    BPT_DEPTH(
-        sam_bam_ch.combine(CALL.out.reg, by:0)
-    )
-
-    REFINE(
-        CALL.out.calls.combine(BPT_DEPTH.out, by:0)
-    )
-
     MERGE(
-        REFINE.out.collect()
+        // REFINE.out.collect(),
+        CALL.out.calls.map { it[1] }.collect()
     )
 
     FIXVCF(
@@ -80,6 +72,10 @@ workflow QUICKCNV {
         ref
     )
 
+    publish_vcf(
+        FIXVCF.out
+    )
+
     emit:
-    null
+    publish_vcf.out
 }
