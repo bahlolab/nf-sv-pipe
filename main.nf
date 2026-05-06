@@ -51,24 +51,26 @@ workflow {
     vcfs = Channel.fromList([])
     n = 0
 
-    // if (params.callers.contains('SMOOVE')) {
-    //     vcfs = SMOOVE(ref_ch, fam_bam_ch)
-    //     n = n + 1
-    // }
-    // if (params.callers.contains('MANTA')) {
-    //     vcfs = vcfs.mix(MANTA(ref_ch, fam_bam_ch))
-    //     n = n + 1
-    // }
-    // if (params.callers.contains('QDNASEQ')) {
-    //     vcfs = vcfs.mix(QDNASEQ(ref_ch, fam_bam_ch))
-    //     n = n + 1
-    // }
-    // if (params.callers.contains('CNVNATOR')) {
-    //     vcfs = vcfs.mix(CNVNATOR(ref_ch, fam_bam_ch))
-    //     n = n + 1
-    // }
-
-    QUICKCNV(ref_ch, fam_bam_ch)
+    if (params.callers.contains('SMOOVE')) {
+        vcfs = SMOOVE(ref_ch, fam_bam_ch)
+        n = n + 1
+    }
+    if (params.callers.contains('MANTA')) {
+        vcfs = vcfs.mix(MANTA(ref_ch, fam_bam_ch))
+        n = n + 1
+    }
+    if (params.callers.contains('QDNASEQ')) {
+        vcfs = vcfs.mix(QDNASEQ(ref_ch, fam_bam_ch))
+        n = n + 1
+    }
+    if (params.callers.contains('CNVNATOR')) {
+        vcfs = vcfs.mix(CNVNATOR(ref_ch, fam_bam_ch))
+        n = n + 1
+    }
+    if (params.callers.contains('QUICKCNV')) {
+        vcfs = vcfs.mix(QUICKCNV(ref_ch, fam_bam_ch))
+        n = n + 1
+    }
 
     if (n > 1){
         vcfs |
