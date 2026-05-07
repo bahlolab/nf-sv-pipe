@@ -1,76 +1,60 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
-/*
-TODO:
- - switch to BCF where possible in intermediate stages
- - exclude regions (e.g. centromeres, gaps)
- - callset merging
-    - naive version: just set ids and use bcftools concat
- */
 
-params.id = ''
-params.ped = ''
-params.bams = ''
+params.id        = ''
+params.ped       = ''
+params.bams      = ''
 params.ref_fasta = ''
-params.assembly = 'hg38'
-params.callers = ['SMOOVE', 'MANTA', 'CNVNATOR']
-//params.callers = ['MANTA', 'QDNASEQ', 'SMOOVE', 'CNVNATOR']
-params.copy_ref = false
+params.assembly  = 'hg38'
+// Order of params.callers also defines caller priority for per-sample merging:
+// the first caller's records are preferred by truvari --keep maxqual.
+params.callers   = ['MANTA', 'SMOOVE', 'CNVNATOR']
+params.copy_ref  = false
 params.copy_bams = false
-params.outdir = 'output'
-params.progdir = 'progress'
+params.outdir    = 'output'
+params.progdir   = 'progress'
+params.bin_size  = 1000
+params.chrs      = null
 
-include { path; read_tsv; get_families; date_ymd } from './nf/functions'
-include { copy_ref } from './nf/common/copy_ref'
-include { copy_bams } from './nf/common/copy_bams'
-include { concat_vcf } from './nf/common/concat_vcf'
-include { MANTA } from './nf/MANTA'
-include { QDNASEQ } from './nf/QDNASEQ'
-include { SMOOVE } from './nf/SMOOVE'
-include { CNVNATOR } from './nf/CNVNATOR'
+params.truvari_intra_refdist  = 500
+params.truvari_intra_pctseq   = 0.7
+params.truvari_intra_pctsize  = 0.7
+params.truvari_intra_bnddist  = 500
+params.jasmine_max_dist       = 500
+params.truvari_cohort_refdist = 500
+params.truvari_cohort_pctseq  = 0.7
+params.truvari_cohort_pctsize = 0.7
+params.truvari_cohort_bnddist = 500
 
-ped = read_tsv(path(params.ped), ['fid', 'iid', 'pid', 'mid', 'sex', 'phe'])
-bams = read_tsv(path(params.bams), ['iid', 'bam'])
-ref_fa = path(params.ref_fasta)
+if (workflow.profile.contains('test')) {
+    [params.bams, params.ped, params.ref_fasta].each { f ->
+        if (!file(f).exists()) {
+            error """\
+            Test fixture missing: ${f}
+            Generate fixtures first by running:
+                bash test/generate_fixtures.sh
+            """.stripIndent()
+        }
+    }
+}
+
+include { path; read_tsv } from './nf/functions'
+include { SV_CALLING     } from './workflows/sv_calling'
+
+ped    = read_tsv(path(params.ped),       ['fid', 'iid', 'pid', 'mid', 'sex', 'phe'])
+bams   = read_tsv(path(params.bams),      ['iid', 'bam'])
+ref_fa  = path(params.ref_fasta)
 ref_fai = path(params.ref_fasta + '.fai')
 
 workflow {
 
     ref_ch = Channel.value([ref_fa, ref_fai])
-    if (params.copy_ref) { ref_ch = copy_ref(ref_ch) }
 
     fam_bam_ch =
-        Channel.from(bams) |
-        map { [it.iid, path(it.bam), path(it.bam + '.bai')] } |
-        combine(ped.collect { [it.iid, it.fid] }, by: 0) |
-        map { it[[3,0,1,2]] }
+        Channel.from(bams)
+            .map { [it.iid, path(it.bam), path(it.bam + '.bai')] }
+            .combine(ped.collect { [it.iid, it.fid] }, by: 0)
+            .map { iid, bam, bai, fid -> [fid, iid, bam, bai] }
 
-    if (params.copy_bams) { fam_bam_ch = copy_bams(fam_bam_ch) }
-
-    vcfs = Channel.fromList([])
-    n = 0
-
-    if (params.callers.contains('SMOOVE')) {
-        vcfs = SMOOVE(ref_ch, fam_bam_ch)
-        n = n + 1
-    }
-    if (params.callers.contains('MANTA')) {
-        vcfs = vcfs.mix(MANTA(ref_ch, fam_bam_ch))
-        n = n + 1
-    }
-    if (params.callers.contains('QDNASEQ')) {
-        vcfs = vcfs.mix(QDNASEQ(ref_ch, fam_bam_ch))
-        n = n + 1
-    }
-    if (params.callers.contains('CNVNATOR')) {
-        vcfs = vcfs.mix(CNVNATOR(ref_ch, fam_bam_ch))
-        n = n + 1
-    }
-
-    if (n > 1){
-        vcfs |
-            toSortedList |
-            map { it.transpose() } |
-            concat_vcf
-    }
+    SV_CALLING(ref_ch, fam_bam_ch)
 }
