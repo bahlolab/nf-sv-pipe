@@ -1,7 +1,7 @@
 
 include { OCTOPUSV_CORRECT       as CORRECT       } from '../../modules/local/octopusv_correct'
 include { BCFTOOLS_MERGE_CALLERS as MERGE_CALLERS } from '../../modules/local/bcftools_merge_callers'
-include { TRUVARI_COLLAPSE_INTRA as COLLAPSE_INTRA } from '../../modules/local/truvari_collapse_intra'
+include { TRUVARI_COLLAPSE_SAMPLE as COLLAPSE_SAMPLE } from '../../modules/local/truvari_collapse_sample'
 
 workflow MERGE_SAMPLE {
     take:
@@ -23,8 +23,8 @@ workflow MERGE_SAMPLE {
 
         MERGE_CALLERS(per_sample)
 
-        COLLAPSE_INTRA(MERGE_CALLERS.out, ref_ch)
+        COLLAPSE_SAMPLE(MERGE_CALLERS.out, ref_ch)
 
     emit:
-        vcfs = COLLAPSE_INTRA.out  // [sam, vcf, tbi]
+        vcfs = COLLAPSE_SAMPLE.out  // [sam, vcf]
 }

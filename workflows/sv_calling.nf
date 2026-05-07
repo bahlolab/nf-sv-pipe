@@ -22,6 +22,6 @@ workflow SV_CALLING {
 
     emit:
         vcfs           = vcfs                    // [caller, sample_id, vcf, vcf_index]
-        merged_sample  = MERGE_SAMPLE.out.vcfs   // [sam, vcf, tbi]
+        merged_sample  = MERGE_SAMPLE.out.vcfs   // [sam, vcf]
         merged_cohort  = MERGE_COHORT.out.vcf    // [final_vcf, final_tbi]
 }

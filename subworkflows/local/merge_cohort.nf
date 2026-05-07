@@ -1,38 +1,34 @@
 
-include { SVTYPE_SPLIT            as SPLIT         } from '../../modules/local/svtype_split'
-include { JASMINE_MERGE           as JASMINE       } from '../../modules/local/jasmine_merge'
-include { TRUVARI_COLLAPSE_COHORT as COLLAPSE_COHORT } from '../../modules/local/truvari_collapse_cohort'
-include { SV_FINAL_MERGE          as FINAL_MERGE   } from '../../modules/local/sv_final_merge'
+include { SVTYPE_SPLIT            as SPLIT               } from '../../modules/local/svtype_split'
+include { JASMINE_MERGE           as JASMINE             } from '../../modules/local/jasmine_merge'
+include { BCFTOOLS_SORT_INDEX     as SORT_INDEX_JASMINE  } from '../../modules/local/bcftools_sort_index'
+include { BCFTOOLS_MERGE_COHORT   as MERGE_TRUVARI_SAMPLES } from '../../modules/local/bcftools_merge_cohort'
+include { TRUVARI_COLLAPSE_COHORT as COLLAPSE_COHORT     } from '../../modules/local/truvari_collapse_cohort'
+include { SV_FINAL_MERGE          as FINAL_MERGE         } from '../../modules/local/sv_final_merge'
 
 workflow MERGE_COHORT {
     take:
-        vcfs    // [sam, vcf, tbi]
+        vcfs    // [sam, vcf]
         ref_ch  // value: [ref_fa, ref_fai]
 
     main:
         SPLIT(vcfs)
 
         jasmine_in = SPLIT.out
-            .map { sam, jvcf, jtbi, tvcf, ttbi -> [jvcf, jtbi] }
+            .map { sam, jvcf, tvcf -> jvcf }
             .collect()
-            .map { files ->
-                def pairs = files.collate(2)
-                [pairs.collect { it[0] }, pairs.collect { it[1] }]
-            }
 
         JASMINE(jasmine_in)
+        SORT_INDEX_JASMINE(JASMINE.out)
 
         truvari_in = SPLIT.out
-            .map { sam, jvcf, jtbi, tvcf, ttbi -> [tvcf, ttbi] }
+            .map { sam, jvcf, tvcf -> tvcf }
             .collect()
-            .map { files ->
-                def pairs = files.collate(2)
-                [pairs.collect { it[0] }, pairs.collect { it[1] }]
-            }
 
-        COLLAPSE_COHORT(truvari_in, ref_ch)
+        MERGE_TRUVARI_SAMPLES(truvari_in)
+        COLLAPSE_COHORT(MERGE_TRUVARI_SAMPLES.out, ref_ch)
 
-        FINAL_MERGE(JASMINE.out.combine(COLLAPSE_COHORT.out))
+        FINAL_MERGE(SORT_INDEX_JASMINE.out.combine(COLLAPSE_COHORT.out))
 
     emit:
         vcf = FINAL_MERGE.out  // [final_vcf, final_tbi]
