@@ -16,7 +16,9 @@ process TRUVARI_COLLAPSE_SAMPLE {
     out_vcf = "${sam}.consensus.vcf.gz"
     """
     truvari collapse \\
-        --intra --chain --keep maxqual \\
+        --keep first \\
+        --intra \\
+        --chain \\
         --reference $ref_fa \\
         --refdist   $params.truvari_intra_refdist \\
         --pctseq    $params.truvari_intra_pctseq \\

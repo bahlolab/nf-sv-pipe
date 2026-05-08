@@ -1,5 +1,4 @@
 
-include { SMOOVE_EXCLUDE_BED as EXCLUDE_BED } from '../../modules/local/smoove_exclude_bed'
 include { SMOOVE_CALL        as CALL        } from '../../modules/local/smoove_call'
 include { SMOOVE_MERGE       as MERGE       } from '../../modules/local/smoove_merge'
 include { SMOOVE_GENOTYPE    as GENOTYPE    } from '../../modules/local/smoove_genotype'
@@ -8,13 +7,12 @@ workflow SMOOVE {
     take:
         ref_ch      // value channel: [ref_fa, ref_fai]
         fam_bam_ch  // queue: [fam, sam, bam, bai]
+        excl_ch     // value: smoove exclude BED
 
     main:
         sam_bam_ch = fam_bam_ch.map { fam, sam, bam, bai -> [sam, bam, bai] }
 
-        exclude = EXCLUDE_BED()
-
-        CALL(sam_bam_ch, ref_ch, exclude)
+        CALL(sam_bam_ch, ref_ch, excl_ch)
 
         // Annotate call output with family ID via join on sample key
         call_with_fam = CALL.out
