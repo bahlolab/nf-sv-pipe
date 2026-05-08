@@ -17,7 +17,14 @@ process OCTOPUSV_CORRECT {
     zcat $vcf > input.vcf
     octopusv correct input.vcf corrected.svcf
     octopusv svcf2vcf -i corrected.svcf -o corrected.vcf
-    gzip -c corrected.vcf > $out_vcf
+    awk 'BEGIN { OFS = "\\t" }
+        /^#/ { print; next }
+        {
+            svtype = \$8; sub(/.*SVTYPE=/, "", svtype); sub(/;.*/, "", svtype)
+            \$3 = "${caller}_" svtype "_" ++n[svtype]
+            sub(/SVMETHOD=OctopuSV/, "SVMETHOD=${caller}")
+            print
+        }' corrected.vcf | gzip -c > $out_vcf
     rm input.vcf corrected.svcf corrected.vcf
     """
 }
