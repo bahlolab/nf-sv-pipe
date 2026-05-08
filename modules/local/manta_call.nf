@@ -13,7 +13,7 @@ process MANTA_CALL {
     tuple val(fam), path(out_vcf), path("${out_vcf}.tbi")
 
     script:
-    out_vcf = "${fam}.manta.vcf.gz"
+    out_vcf = "${fam}.MANTA.vcf.gz"
     """
     configManta.py \\
         --referenceFasta $ref_fa \\

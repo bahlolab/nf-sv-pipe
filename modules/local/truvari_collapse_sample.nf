@@ -25,6 +25,7 @@ process TRUVARI_COLLAPSE_SAMPLE {
         --pctsize   $params.truvari_intra_pctsize \\
         --bnddist   $params.truvari_intra_bnddist \\
         --input $vcf \\
-        --output $out_vcf
+        --output $out_vcf \\
+        --removed-output removed.vcf.gz
     """
 }

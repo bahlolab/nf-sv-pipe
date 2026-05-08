@@ -13,7 +13,7 @@ process SMOOVE_MERGE {
     tuple val(fam), path(out_vcf)
 
     script:
-    pref = "${fam}.smoove-merged"
+    pref    = "${fam}.SMOOVE"
     out_vcf = "${pref}.sites.vcf.gz"
     """
     mkdir tmp && export TMPDIR=tmp

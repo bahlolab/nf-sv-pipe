@@ -13,7 +13,7 @@ process CNVNATOR_TO_VCF {
     tuple val(sam), path(vcf), path("${vcf}.csi")
 
     script:
-    vcf = "${sam}.CNVnator.vcf.gz"
+    vcf = "${sam}.CNVNATOR.vcf.gz"
     """
     cnvnator2VCF.pl $cnvnator_out $ref -prefix $sam |
         bcftools view -Oz -o tmp.vcf.gz

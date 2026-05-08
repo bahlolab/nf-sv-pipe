@@ -37,7 +37,7 @@ workflow DELLY_CNV {
 
         CNV_GENOTYPE(genotype_in, ref_ch, map_ch)
 
-        BCF_TO_VCF(singleton_bcfs.mix(CNV_GENOTYPE.out))
+        BCF_TO_VCF(singleton_bcfs.mix(CNV_GENOTYPE.out), true)
 
         vcfs = BCF_TO_VCF.out.map { sam, vcf, csi -> ['DELLY_CNV', sam, vcf, csi] }
 

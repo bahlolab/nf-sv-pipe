@@ -37,7 +37,7 @@ workflow DELLY {
 
         GENOTYPE(genotype_in, ref_ch, excl_ch)
 
-        BCF_TO_VCF(singleton_bcfs.mix(GENOTYPE.out))
+        BCF_TO_VCF(singleton_bcfs.mix(GENOTYPE.out), false)
 
         vcfs = BCF_TO_VCF.out.map { sam, vcf, csi -> ['DELLY', sam, vcf, csi] }
 

@@ -14,6 +14,6 @@ process DELLY_MERGE_CNV {
     script:
     out_bcf = "${fam}.delly_cnv_sites.bcf"
     """
-    delly merge -e -p -m 1000 -n 100000 -o $out_bcf $bcfs
+    delly merge -e -p -m 1000 -n 10000000 -o $out_bcf $bcfs
     """
 }

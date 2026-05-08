@@ -7,14 +7,17 @@ process DELLY_BCF_TO_VCF {
 
     input:
     tuple val(sam), path(bcf), path(csi)
+    val(is_cnv)
 
     output:
     tuple val(sam), path(out_vcf), path("${out_vcf}.csi")
 
     script:
-    out_vcf = "${bcf.name.replaceAll(/\\.bcf$/, '')}.vcf.gz"
+    out_vcf = is_cnv ? "${sam}.DELLY_CNV.vcf.gz" : "${sam}.DELLY.vcf.gz"
     """
-    bcftools view $bcf -Oz -o $out_vcf
+    ${is_cnv
+        ? "bcftools view $bcf | delly_cnv_norm.awk | bcftools view -Oz -o $out_vcf"
+        : "bcftools view $bcf -Oz -o $out_vcf"}
     bcftools index $out_vcf
     """
 }

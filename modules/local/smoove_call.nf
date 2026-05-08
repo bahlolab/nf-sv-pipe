@@ -11,10 +11,11 @@ process SMOOVE_CALL {
     path(exclude)
 
     output:
-    tuple val(sam), path(vcf), path("${vcf}.csi")
+    tuple val(sam), path(out_vcf), path("${out_vcf}.csi")
 
     script:
-    vcf = "${sam}-smoove.genotyped.vcf.gz"
+    smoove_vcf = "${sam}-smoove.genotyped.vcf.gz"
+    out_vcf    = "${sam}.SMOOVE.vcf.gz"
     """
     mkdir tmp && export TMPDIR=tmp
     /usr/bin/time -v smoove call $bam \\
@@ -24,5 +25,7 @@ process SMOOVE_CALL {
         --name $sam \\
         --fasta $ref_fa \\
         --genotype
+    mv $smoove_vcf $out_vcf
+    mv ${smoove_vcf}.csi ${out_vcf}.csi
     """
 }

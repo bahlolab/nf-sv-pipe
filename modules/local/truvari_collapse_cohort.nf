@@ -22,6 +22,7 @@ process TRUVARI_COLLAPSE_COHORT {
         --pctsize   $params.truvari_cohort_pctsize \\
         --bnddist   $params.truvari_cohort_bnddist \\
         --input $vcf \\
-        --output $out_vcf
+        --output $out_vcf \\
+        --removed-output removed.vcf.gz
     """
 }

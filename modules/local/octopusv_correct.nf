@@ -12,7 +12,7 @@ process OCTOPUSV_CORRECT {
     tuple val(caller), val(sam), path(out_vcf)
 
     script:
-    out_vcf = "${caller}_${sam}.corrected.vcf.gz"
+    out_vcf = "${sam}.${caller}.corrected.vcf.gz"
     """
     zcat $vcf > input.vcf
     octopusv correct input.vcf corrected.svcf
