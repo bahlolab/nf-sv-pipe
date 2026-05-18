@@ -22,7 +22,10 @@ process MANTA_CALL {
 
     ./runWorkflow.py -j $task.cpus -g ${task.memory.toGiga().intValue()}
 
-    mv ./results/variants/diploidSV.vcf.gz $out_vcf
-    mv ./results/variants/diploidSV.vcf.gz.tbi ${out_vcf}.tbi
+    MANTA_ROOT=\$(dirname \$(dirname \$(readlink -f \$(which configManta.py))))
+    export PATH=\$PATH:\$MANTA_ROOT/libexec
+    convertInversion.py \$MANTA_ROOT/libexec/samtools $ref_fa ./results/variants/diploidSV.vcf.gz \\
+        | bgzip --threads $task.cpus > $out_vcf
+    tabix $out_vcf
     """
 }

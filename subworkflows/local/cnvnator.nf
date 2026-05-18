@@ -1,7 +1,7 @@
 
 include { CNVNATOR_PROCESS_REF as PROCESS_REF } from '../../modules/local/cnvnator_process_ref'
 include { CNVNATOR_CALL        as CALL        } from '../../modules/local/cnvnator_call'
-include { CNVNATOR_TO_VCF      as TO_VCF      } from '../../modules/local/cnvnator_to_vcf'
+include { CNVNATOR_TO_BCF      as TO_BCF      } from '../../modules/local/cnvnator_to_bcf'
 
 workflow CNVNATOR {
     take:
@@ -25,10 +25,10 @@ workflow CNVNATOR {
             proc_ref.map { ref_dir, fai -> ref_dir }
         )
 
-        TO_VCF(CALL.out, proc_ref)
+        TO_BCF(CALL.out, proc_ref.map { ref_dir, fai -> fai })
 
-        vcfs = TO_VCF.out
-            .map { sam, vcf, csi -> ['CNVNATOR', sam, vcf, csi] }
+        vcfs = TO_BCF.out
+            .map { sam, bcf, csi -> ['CNVNATOR', sam, bcf, csi] }
 
     emit:
         vcfs

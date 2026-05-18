@@ -6,14 +6,14 @@ process MANTA_SPLIT_SAMPLE {
     publishDir "${params.progdir}/MANTA/split_sample", mode: 'symlink'
 
     input:
-    tuple val(fam), path(vcf), path(tbi), val(sample_id)
+    tuple val(fam), path(vcf), path(idx), val(sample_id)
 
     output:
-    tuple val(sample_id), path("${sample_id}.MANTA.vcf.gz"), path("${sample_id}.MANTA.vcf.gz.tbi")
+    tuple val(sample_id), path("${sample_id}.MANTA.bcf"), path("${sample_id}.MANTA.bcf.csi")
 
     script:
     """
-    bcftools view --threads $task.cpus -s ${sample_id} --min-ac 1 -Oz -o ${sample_id}.MANTA.vcf.gz ${vcf}
-    bcftools index -t ${sample_id}.MANTA.vcf.gz
+    bcftools view --threads $task.cpus -s ${sample_id} --min-ac 1 -Ob -o ${sample_id}.MANTA.bcf ${vcf}
+    bcftools index --threads ${task.cpus} ${sample_id}.MANTA.bcf
     """
 }

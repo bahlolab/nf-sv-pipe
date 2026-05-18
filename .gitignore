@@ -11,3 +11,5 @@ test/fixtures/
 test/output/
 test/progress/
 reference_files/
+.Rproj.user/
+*.pyc

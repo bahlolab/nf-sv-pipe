@@ -14,6 +14,6 @@ process CNVNATOR_PROCESS_REF {
     """
     mkdir ref
     ${chrs.collect { "samtools faidx $ref $it > ref/${it}.fa" }.join('\n')}
-    grep -P '${chrs.collect { it + '\\t' }.join('|')}' $fai > ref.fai
+    awk 'BEGIN{split("${chrs.join(' ')}",a); for(k in a) s[a[k]]=1} \$1 in s' $fai > ref.fai
     """
 }

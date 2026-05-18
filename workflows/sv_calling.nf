@@ -5,8 +5,7 @@ include { CNVNATOR               } from '../subworkflows/local/cnvnator'
 include { DELLY                  } from '../subworkflows/local/delly'
 include { DELLY_CNV              } from '../subworkflows/local/delly_cnv'
 include { FETCH_REFERENCE_FILES  } from '../modules/local/fetch_reference_files'
-include { MERGE_SAMPLE           } from '../subworkflows/local/merge_sample'
-include { MERGE_COHORT           } from '../subworkflows/local/merge_cohort'
+include { MERGE                  } from '../subworkflows/local/merge'
 
 workflow CHORUS {
     take:
@@ -25,11 +24,10 @@ workflow CHORUS {
         if (params.callers.contains('DELLY'))     { vcfs = vcfs.mix(DELLY(ref_ch, fam_bam_ch, FETCH_REFERENCE_FILES.out.delly_excl).vcfs) }
         if (params.callers.contains('DELLY_CNV')) { vcfs = vcfs.mix(DELLY_CNV(ref_ch, fam_bam_ch, FETCH_REFERENCE_FILES.out.delly_map).vcfs) }
 
-        MERGE_SAMPLE(vcfs, ref_ch)
-        // MERGE_COHORT(MERGE_SAMPLE.out.vcfs, ref_ch)
+        MERGE(vcfs)
 
     emit:
-        vcfs           = vcfs                    // [caller, sample_id, vcf, vcf_index]
-        merged_sample  = MERGE_SAMPLE.out.vcfs   // [sam, vcf]
-        // merged_cohort  = MERGE_COHORT.out.vcf    // [final_vcf, final_tbi]
+        vcfs      = vcfs                // [caller, sam, bcf, csi]
+        collapsed = MERGE.out.collapsed // [sam, bcf, csi]
+        merged    = MERGE.out.merged    // [cohort.bcf, cohort.bcf.csi]
 }

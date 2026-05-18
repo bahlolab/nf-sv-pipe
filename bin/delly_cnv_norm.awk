@@ -1,4 +1,4 @@
-#!/usr/bin/env -S awk -f
+#!/usr/bin/awk -f
 # Normalise delly cnv output: recode SVTYPE=CNV records to DEL/DUP based on
 # the sample CN field, fix the symbolic allele, and update GT.
 # CN=2 (diploid) records are dropped; all other records pass through unchanged.

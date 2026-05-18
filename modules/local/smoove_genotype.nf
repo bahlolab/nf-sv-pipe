@@ -27,7 +27,7 @@ process SMOOVE_GENOTYPE {
     (
         bcftools view -h $smoove_vcf
         bcftools view -H $smoove_vcf | awk '!/^#/ {key = \$1\$2\$3\$4\$5; if (!seen[key]++) print \$0}'
-    ) | bcftools view -Oz -o $out_vcf
-    bcftools index -f $out_vcf
+    ) | bcftools view --threads ${task.cpus} -Oz -o $out_vcf
+    bcftools index --threads ${task.cpus} $out_vcf
     """
 }

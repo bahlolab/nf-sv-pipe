@@ -2,6 +2,7 @@
 include { SMOOVE_CALL        as CALL        } from '../../modules/local/smoove_call'
 include { SMOOVE_MERGE       as MERGE       } from '../../modules/local/smoove_merge'
 include { SMOOVE_GENOTYPE    as GENOTYPE    } from '../../modules/local/smoove_genotype'
+include { SMOOVE_TO_BCF      as TO_BCF      } from '../../modules/local/smoove_to_bcf'
 
 workflow SMOOVE {
     take:
@@ -29,7 +30,7 @@ workflow SMOOVE {
 
         // Singletons: use CALL output directly (already genotyped via --genotype)
         singleton_vcfs = branched.singleton
-            .map { fam, sams, vcfs, csis -> ['SMOOVE', sams[0], vcfs[0], csis[0]] }
+            .map { fam, sams, vcfs, csis -> [sams[0], vcfs[0], csis[0]] }
 
         // Multi-member families: one merge per family, then re-genotype each sample
         MERGE(
@@ -44,10 +45,9 @@ workflow SMOOVE {
 
         GENOTYPE(genotype_in, ref_ch)
 
-        multi_vcfs = GENOTYPE.out
-            .map { sam, vcf, csi -> ['SMOOVE', sam, vcf, csi] }
+        TO_BCF(singleton_vcfs.mix(GENOTYPE.out))
 
-        vcfs = singleton_vcfs.mix(multi_vcfs)
+        vcfs = TO_BCF.out.map { sam, bcf, csi -> ['SMOOVE', sam, bcf, csi] }
 
     emit:
         vcfs

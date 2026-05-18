@@ -2,7 +2,7 @@
 include { DELLY_CNV_CALL     as CNV_CALL    } from '../../modules/local/delly_cnv_call'
 include { DELLY_MERGE_CNV    as MERGE_CNV   } from '../../modules/local/delly_merge_cnv'
 include { DELLY_CNV_GENOTYPE as CNV_GENOTYPE } from '../../modules/local/delly_cnv_genotype'
-include { DELLY_BCF_TO_VCF   as BCF_TO_VCF  } from '../../modules/local/delly_bcf_to_vcf'
+include { DELLY_CNV_NORM                     } from '../../modules/local/delly_cnv_norm'
 
 workflow DELLY_CNV {
     take:
@@ -37,9 +37,9 @@ workflow DELLY_CNV {
 
         CNV_GENOTYPE(genotype_in, ref_ch, map_ch)
 
-        BCF_TO_VCF(singleton_bcfs.mix(CNV_GENOTYPE.out), true)
+        DELLY_CNV_NORM(singleton_bcfs.mix(CNV_GENOTYPE.out))
 
-        vcfs = BCF_TO_VCF.out.map { sam, vcf, csi -> ['DELLY_CNV', sam, vcf, csi] }
+        vcfs = DELLY_CNV_NORM.out.map { sam, bcf, csi -> ['DELLY_CNV', sam, bcf, csi] }
 
     emit:
         vcfs

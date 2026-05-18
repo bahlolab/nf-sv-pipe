@@ -9,14 +9,14 @@ process MANTA_FIX_VCF {
     tuple val(id), path(vcf), path(tbi)
 
     output:
-    tuple val(id), path(out_vcf), path("${out_vcf}.tbi")
+    tuple val(id), path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_vcf = vcf.name.replaceAll('.vcf.gz', '.fixed.vcf.gz')
+    out_bcf = vcf.name.replaceAll('.vcf.gz', '.fixed.bcf')
     """
     bcftools view -h $vcf | \\
         sed 's:##INFO=<ID=SVLEN,Number=.,:##INFO=<ID=SVLEN,Number=1,:' > header.txt
-    bcftools reheader $vcf -h header.txt -o $out_vcf
-    bcftools index -t $out_vcf
+    bcftools reheader $vcf -h header.txt | bcftools view --threads ${task.cpus} -Ob -o ${out_bcf}
+    bcftools index --threads ${task.cpus} ${out_bcf}
     """
 }

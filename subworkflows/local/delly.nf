@@ -2,7 +2,6 @@
 include { DELLY_CALL        as CALL        } from '../../modules/local/delly_call'
 include { DELLY_MERGE_SITES as MERGE_SITES } from '../../modules/local/delly_merge_sites'
 include { DELLY_GENOTYPE    as GENOTYPE    } from '../../modules/local/delly_genotype'
-include { DELLY_BCF_TO_VCF  as BCF_TO_VCF  } from '../../modules/local/delly_bcf_to_vcf'
 
 workflow DELLY {
     take:
@@ -37,9 +36,7 @@ workflow DELLY {
 
         GENOTYPE(genotype_in, ref_ch, excl_ch)
 
-        BCF_TO_VCF(singleton_bcfs.mix(GENOTYPE.out), false)
-
-        vcfs = BCF_TO_VCF.out.map { sam, vcf, csi -> ['DELLY', sam, vcf, csi] }
+        vcfs = singleton_bcfs.mix(GENOTYPE.out).map { sam, bcf, csi -> ['DELLY', sam, bcf, csi] }
 
     emit:
         vcfs
