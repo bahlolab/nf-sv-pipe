@@ -3,7 +3,7 @@ process DELLY_CALL {
     label 'delly'
     label 'C2M16T4'
     tag { sam }
-    publishDir "${params.progdir}/delly_call", mode: 'symlink'
+    storeDir params.cachedir ? "${params.cachedir}/DELLY_CALL" : null
 
     input:
     tuple val(sam), path(bam), path(bai)
@@ -16,6 +16,6 @@ process DELLY_CALL {
     script:
     out_bcf = "${sam}.delly.bcf"
     """
-    delly call -g $ref_fa -x $excl -o $out_bcf $bam
+    delly call -h ${task.cpus} -g $ref_fa -x $excl -o $out_bcf $bam
     """
 }

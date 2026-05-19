@@ -3,7 +3,7 @@ process SMOOVE_CALL {
     label 'smoove'
     label 'C2M16T4'
     tag { sam }
-    publishDir "${params.progdir}/SMOOVE/call", mode: 'symlink'
+    storeDir params.cachedir ? "${params.cachedir}/SMOOVE_CALL" : null
 
     input:
     tuple val(sam), path(bam), path(bai)

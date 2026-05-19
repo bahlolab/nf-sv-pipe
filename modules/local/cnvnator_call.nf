@@ -4,7 +4,7 @@ process CNVNATOR_CALL {
     label 'cnvnator'
     tag { sam }
     maxForks 1
-    publishDir "${params.progdir}/CNVNATOR/call", mode: 'symlink'
+    storeDir params.cachedir ? "${params.cachedir}/CNVNATOR_CALL" : null
 
     input:
     tuple val(sam), path(bam), path(bai), val(chrs)

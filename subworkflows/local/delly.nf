@@ -1,7 +1,7 @@
 
-include { DELLY_CALL        as CALL        } from '../../modules/local/delly_call'
-include { DELLY_MERGE_SITES as MERGE_SITES } from '../../modules/local/delly_merge_sites'
-include { DELLY_GENOTYPE    as GENOTYPE    } from '../../modules/local/delly_genotype'
+include { DELLY_CALL     as CALL     } from '../../modules/local/delly_call'
+include { DELLY_MERGE    as MERGE    } from '../../modules/local/delly_merge'
+include { DELLY_GENOTYPE as GENOTYPE } from '../../modules/local/delly_genotype'
 
 workflow DELLY {
     take:
@@ -28,9 +28,9 @@ workflow DELLY {
         singleton_bcfs = branched.singleton
             .map { _fam, sams, bcfs, csis -> [sams[0], bcfs[0], csis[0]] }
 
-        MERGE_SITES(branched.multi.map { fam, _sams, bcfs, csis -> [fam, bcfs, csis] })
+        MERGE(branched.multi.map { fam, _sams, bcfs, csis -> [fam, bcfs, csis] })
 
-        genotype_in = MERGE_SITES.out
+        genotype_in = MERGE.out
             .combine(fam_bam_ch.map { fam, sam, bam, bai -> [fam, sam, bam, bai] }, by: 0)
             .map { _fam, sites_bcf, sites_csi, sam, bam, bai -> [sam, bam, bai, sites_bcf, sites_csi] }
 

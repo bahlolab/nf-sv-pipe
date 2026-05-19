@@ -9,7 +9,7 @@ workflow MERGE {
     main:
         per_sample = vcfs
             .map { caller, sam, bcf, csi -> [sam, caller, bcf, csi] }
-            .groupTuple(by: 0)
+            .groupTuple(by: 0, size: params.callers.size())
             .map { sam, callers, bcfs, csis ->
                 def order = [callers, bcfs, csis].transpose()
                     .sort { a, b -> params.callers.indexOf(a[0]) <=> params.callers.indexOf(b[0]) }

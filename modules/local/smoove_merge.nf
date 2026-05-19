@@ -3,7 +3,6 @@ process SMOOVE_MERGE {
     label 'smoove'
     label 'C2M8T2'
     tag { fam }
-    publishDir "${params.progdir}/SMOOVE/merge", mode: 'symlink'
 
     input:
     tuple val(fam), path(vcfs), path(indices)

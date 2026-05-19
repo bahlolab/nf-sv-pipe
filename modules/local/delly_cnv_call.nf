@@ -3,7 +3,7 @@ process DELLY_CNV_CALL {
     label 'delly'
     label 'C2M16T4'
     tag { sam }
-    publishDir "${params.progdir}/delly_cnv_call", mode: 'symlink'
+    storeDir params.cachedir ? "${params.cachedir}/DELLY_CNV_CALL" : null
 
     input:
     tuple val(sam), path(bam), path(bai)

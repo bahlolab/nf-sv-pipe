@@ -46,11 +46,11 @@ workflow MANTA {
 
         // Singletons: id IS sam and file is already named per-sample — emit directly
         singleton_vcfs = fix_tagged.singleton
-            .map { sam, vcf, tbi, _ -> ['MANTA', sam, vcf, tbi] }
+            .map { sam, vcf, tbi, _x -> ['MANTA', sam, vcf, tbi] }
 
         // Multi: pair each family VCF with every sample in that family, then split
         split_in = fix_tagged.multi
-            .map { fam, vcf, tbi, _ -> [fam, vcf, tbi] }
+            .map { fam, vcf, tbi, _x -> [fam, vcf, tbi] }
             .combine(fam_bam_ch.map { fam, sam, bam, bai -> [fam, sam] }, by: 0)
 
         SPLIT_SAMPLE(split_in)

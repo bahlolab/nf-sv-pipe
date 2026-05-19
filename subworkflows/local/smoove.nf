@@ -1,8 +1,8 @@
 
-include { SMOOVE_CALL        as CALL        } from '../../modules/local/smoove_call'
-include { SMOOVE_MERGE       as MERGE       } from '../../modules/local/smoove_merge'
-include { SMOOVE_GENOTYPE    as GENOTYPE    } from '../../modules/local/smoove_genotype'
-include { SMOOVE_TO_BCF      as TO_BCF      } from '../../modules/local/smoove_to_bcf'
+include { SMOOVE_CALL     as CALL     } from '../../modules/local/smoove_call'
+include { SMOOVE_MERGE    as MERGE    } from '../../modules/local/smoove_merge'
+include { SMOOVE_GENOTYPE as GENOTYPE } from '../../modules/local/smoove_genotype'
+include { SMOOVE_TO_BCF   as TO_BCF   } from '../../modules/local/smoove_to_bcf'
 
 workflow SMOOVE {
     take:

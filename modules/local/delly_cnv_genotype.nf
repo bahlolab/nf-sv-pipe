@@ -3,7 +3,6 @@ process DELLY_CNV_GENOTYPE {
     label 'delly'
     label 'C2M8T2'
     tag { sam }
-    publishDir "${params.progdir}/delly_cnv_genotype", mode: 'symlink'
 
     input:
     tuple val(sam), path(bam), path(bai), path(sites_bcf), path(sites_csi)

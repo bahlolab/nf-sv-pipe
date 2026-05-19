@@ -2,7 +2,6 @@
 process CNVNATOR_PROCESS_REF {
     label 'samtools'
     label 'C2M4T4'
-    publishDir "${params.progdir}/CNVNATOR/process_ref", mode: 'symlink'
 
     input:
     tuple path(ref), path(fai), val(chrs)

@@ -3,7 +3,6 @@ process SMOOVE_GENOTYPE {
     label 'smoove'
     label 'C2M8T2'
     tag { sam }
-    publishDir "${params.progdir}/SMOOVE/genotype", mode: 'symlink'
 
     input:
     tuple val(sam), path(bam), path(bai), path(sites_vcf)

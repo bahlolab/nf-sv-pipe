@@ -1,8 +1,8 @@
 
-include { DELLY_CNV_CALL     as CNV_CALL    } from '../../modules/local/delly_cnv_call'
-include { DELLY_MERGE_CNV    as MERGE_CNV   } from '../../modules/local/delly_merge_cnv'
-include { DELLY_CNV_GENOTYPE as CNV_GENOTYPE } from '../../modules/local/delly_cnv_genotype'
-include { DELLY_CNV_NORM                     } from '../../modules/local/delly_cnv_norm'
+include { DELLY_CNV_CALL     as CALL     } from '../../modules/local/delly_cnv_call'
+include { DELLY_MERGE_CNV    as MERGE    } from '../../modules/local/delly_merge_cnv'
+include { DELLY_CNV_GENOTYPE as GENOTYPE } from '../../modules/local/delly_cnv_genotype'
+include { DELLY_CNV_NORM     as NORM     } from '../../modules/local/delly_cnv_norm'
 
 workflow DELLY_CNV {
     take:
@@ -13,9 +13,9 @@ workflow DELLY_CNV {
     main:
         sam_bam_ch = fam_bam_ch.map { _fam, sam, bam, bai -> [sam, bam, bai] }
 
-        CNV_CALL(sam_bam_ch, ref_ch, map_ch)
+        CALL(sam_bam_ch, ref_ch, map_ch)
 
-        call_with_fam = CNV_CALL.out
+        call_with_fam = CALL.out
             .join(fam_bam_ch.map { fam, sam, _bam, _bai -> [sam, fam] })
             .map { sam, bcf, csi, fam -> [fam, sam, bcf, csi] }
 
@@ -29,17 +29,17 @@ workflow DELLY_CNV {
         singleton_bcfs = branched.singleton
             .map { _fam, sams, bcfs, csis -> [sams[0], bcfs[0], csis[0]] }
 
-        MERGE_CNV(branched.multi.map { fam, _sams, bcfs, csis -> [fam, bcfs, csis] })
+        MERGE(branched.multi.map { fam, _sams, bcfs, csis -> [fam, bcfs, csis] })
 
-        genotype_in = MERGE_CNV.out
+        genotype_in = MERGE.out
             .combine(fam_bam_ch.map { fam, sam, bam, bai -> [fam, sam, bam, bai] }, by: 0)
             .map { _fam, sites_bcf, sites_csi, sam, bam, bai -> [sam, bam, bai, sites_bcf, sites_csi] }
 
-        CNV_GENOTYPE(genotype_in, ref_ch, map_ch)
+        GENOTYPE(genotype_in, ref_ch, map_ch)
 
-        DELLY_CNV_NORM(singleton_bcfs.mix(CNV_GENOTYPE.out))
+        NORM(singleton_bcfs.mix(GENOTYPE.out))
 
-        vcfs = DELLY_CNV_NORM.out.map { sam, bcf, csi -> ['DELLY_CNV', sam, bcf, csi] }
+        vcfs = NORM.out.map { sam, bcf, csi -> ['DELLY_CNV', sam, bcf, csi] }
 
     emit:
         vcfs
