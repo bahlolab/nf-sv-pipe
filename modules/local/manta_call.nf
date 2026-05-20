@@ -8,6 +8,7 @@ process MANTA_CALL {
     input:
     tuple val(fam), path(bam), path(bai)
     tuple path(ref_fa), path(ref_fai)
+    tuple path(call_regions), path(call_regions_tbi)
 
     output:
     tuple val(fam), path(out_vcf), path("${out_vcf}.tbi")
@@ -18,6 +19,7 @@ process MANTA_CALL {
     configManta.py \\
         --referenceFasta $ref_fa \\
         --runDir `pwd -P` \\
+        --callRegions $call_regions \\
         --bam ${bam.join(' --bam ')}
 
     ./runWorkflow.py -j $task.cpus -g ${task.memory.toGiga().intValue()}

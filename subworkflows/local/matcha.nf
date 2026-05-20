@@ -5,8 +5,11 @@ include { MATCHA_MERGE    as MERGE    } from '../../modules/local/matcha_merge'
 workflow MATCHA {
     take:
         vcfs    // queue: [caller, sam, bcf, csi]
+        chrs_ch // value channel: List<String> (empty list = no restriction)
 
     main:
+        chrs_str_ch = chrs_ch.map { it ? it.join(',') : '' }
+
         per_sample = vcfs
             .map { caller, sam, bcf, csi -> [groupKey(sam.toString(), params.callers.size()), caller, bcf, csi] }
             .groupTuple(by:0)
@@ -17,7 +20,11 @@ workflow MATCHA {
                 [sam.target, sorted[0], sorted[1], sorted[2]]
             }
 
-        COLLAPSE(per_sample)
+        COLLAPSE(
+            per_sample,
+            chrs_str_ch
+        )
+        
         MERGE(
             COLLAPSE.out.map { _sam, bcf, _csi -> bcf }.collect(),
             COLLAPSE.out.map { _sam, _bcf, csi -> csi }.collect()

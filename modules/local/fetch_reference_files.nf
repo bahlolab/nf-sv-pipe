@@ -36,12 +36,9 @@ process FETCH_REFERENCE_FILES {
         wget -q -O - $smoove_url | sed '/^#/!s/^/chr/' > $smoove_out
     fi
 
-    # delly excl: always distributed with chr; strip if eff=''
-    if [ "${eff}" = "" ]; then
-        wget -q -O - $delly_excl_url | sed 's/^chr//' > $delly_excl_out
-    else
-        wget -q -O $delly_excl_out $delly_excl_url
-    fi
+    # delly excl: upstream ships both chr- and no-chr variants of every interval;
+    # consumers select via natural chr-name matching, so download as-is.
+    wget -q -O $delly_excl_out $delly_excl_url
 
     # delly map (bgzip FASTA): always distributed with chr; strip headers if eff=''
     # always generate .gzi and .fai locally

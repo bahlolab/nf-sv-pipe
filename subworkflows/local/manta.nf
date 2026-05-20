@@ -5,8 +5,9 @@ include { MANTA_SPLIT_SAMPLE as SPLIT_SAMPLE } from '../../modules/local/manta_s
 
 workflow MANTA {
     take:
-        ref_ch      // value channel: [ref_fa, ref_fai]
-        fam_bam_ch  // queue: [fam, sam, bam, bai]
+        ref_ch          // value channel: [ref_fa, ref_fai]
+        fam_bam_ch      // queue: [fam, sam, bam, bai]
+        call_regions_ch // value channel: [call_regions.bed.gz, call_regions.bed.gz.tbi]
 
     main:
         fam_sizes = fam_bam_ch
@@ -34,7 +35,8 @@ workflow MANTA {
         id_is_singleton = singleton_grouped.map { sam, bams, bais -> [sam, true] }
             .mix(multi_grouped.map    { fam, bams, bais -> [fam, false] })
 
-        CALL(singleton_grouped.mix(multi_grouped), ref_ch)
+        CALL(singleton_grouped.mix(multi_grouped), ref_ch, call_regions_ch)
+        
         FIX_VCF(CALL.out)
 
         fix_tagged = FIX_VCF.out
