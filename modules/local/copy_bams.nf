@@ -1,6 +1,6 @@
 
 process COPY_BAMS {
-    label 'C2M2T2'
+    label 'C2M2T8'
     container null
     tag { sam }
 

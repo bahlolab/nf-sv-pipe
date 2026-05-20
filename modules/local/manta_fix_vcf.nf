@@ -3,6 +3,7 @@ process MANTA_FIX_VCF {
     label 'bcftools'
     label 'C2M2T2'
     tag { id }
+    publishDir "$params.outdir/manta"
 
     input:
     tuple val(id), path(vcf), path(tbi)

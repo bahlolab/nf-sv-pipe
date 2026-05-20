@@ -1,7 +1,7 @@
 
 process DELLY_CALL {
     label 'delly'
-    label 'C2M16T4'
+    label 'C2M4T16'
     tag { sam }
     storeDir params.cachedir ? "${params.cachedir}/DELLY_CALL" : null
 

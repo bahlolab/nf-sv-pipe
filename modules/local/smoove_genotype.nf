@@ -1,7 +1,7 @@
 
 process SMOOVE_GENOTYPE {
     label 'smoove'
-    label 'C2M8T2'
+    label 'C2M8T8'
     tag { sam }
 
     input:

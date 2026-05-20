@@ -1,7 +1,7 @@
 
 process DELLY_CNV_GENOTYPE {
     label 'delly'
-    label 'C2M8T2'
+    label 'C2M8T8'
     tag { sam }
 
     input:
