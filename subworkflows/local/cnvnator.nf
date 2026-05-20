@@ -6,23 +6,25 @@ include { CNVNATOR_TO_BCF      as TO_BCF      } from '../../modules/local/cnvnat
 workflow CNVNATOR {
     take:
         ref_ch      // value channel: [ref_fa, ref_fai]
+        chrs_ch     // value channel: List<String> (empty list = no restriction)
         fam_bam_ch  // queue: [fam, sam, bam, bai]
 
     main:
-        chrs = params.chrs ?:
-            (params.assembly == 'hg38'
-                ? ((1..22) + ['X', 'Y']).collect { 'chr' + it }
-                : ((1..22) + ['X', 'Y']).collect { it.toString() })
-
         sam_bam_ch = fam_bam_ch.map { fam, sam, bam, bai -> [sam, bam, bai] }
 
-        PROCESS_REF(ref_ch.map { fa, fai -> [fa, fai, chrs] })
+        PROCESS_REF(
+            ref_ch,
+            chrs_ch
+        )
 
         proc_ref = PROCESS_REF.out
 
+        chrs_str_ch = chrs_ch.map { it ? it.join(' ') : '' }
+
         CALL(
-            sam_bam_ch.map { sam, bam, bai -> [sam, bam, bai, chrs.join(' ')] },
-            proc_ref.map { ref_dir, fai -> ref_dir }
+            sam_bam_ch,
+            proc_ref.map { ref_dir, fai -> ref_dir },
+            chrs_str_ch
         )
 
         TO_BCF(CALL.out, proc_ref.map { ref_dir, fai -> fai })

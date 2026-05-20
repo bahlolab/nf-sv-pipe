@@ -1,7 +1,7 @@
 
 process MATCHA_COLLAPSE {
-    container null
-    label 'C4M16T4'
+    label 'bcftools'
+    label 'C2M16T4'
     tag { sam }
 
     input:
@@ -14,6 +14,8 @@ process MATCHA_COLLAPSE {
     out_bcf = "${sam}.collapsed.bcf"
     def inputs = [callers, bcfs].transpose().collect { caller, bcf -> "${caller}:${bcf}" }.join(' ')
     """
+    export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/lib
+
     matcha collapse \\
         ${inputs} \\
         --min-jaccard ${params.matcha_min_jaccard} \\

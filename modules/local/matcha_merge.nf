@@ -1,6 +1,6 @@
 
 process MATCHA_MERGE {
-    container null
+    label 'bcftools'
     label 'C4M16T4'
 
     input:
@@ -13,6 +13,8 @@ process MATCHA_MERGE {
     script:
     out_bcf = "${params.id}.cohort.bcf"
     """
+    export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/lib
+
     matcha merge \\
         --min-jaccard ${params.matcha_min_jaccard} \\
         --threads ${task.cpus} \\
