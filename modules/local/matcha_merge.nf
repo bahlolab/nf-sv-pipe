@@ -2,6 +2,7 @@
 process MATCHA_MERGE {
     label 'bcftools'
     label 'C4M16T4'
+    publishDir "$params.outdir"
 
     input:
     path(bcfs)

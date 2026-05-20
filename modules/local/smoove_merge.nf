@@ -15,7 +15,6 @@ process SMOOVE_MERGE {
     pref    = "${fam}.SMOOVE"
     out_vcf = "${pref}.sites.vcf.gz"
     """
-    mkdir tmp && export TMPDIR=tmp
     smoove merge $vcfs \\
         --name $pref \\
         --fasta $ref_fa

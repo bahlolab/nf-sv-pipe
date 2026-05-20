@@ -17,14 +17,14 @@ process SMOOVE_CALL {
     smoove_vcf = "${sam}-smoove.genotyped.vcf.gz"
     out_vcf    = "${sam}.SMOOVE.vcf.gz"
     """
-    mkdir tmp && export TMPDIR=tmp
-    /usr/bin/time -v smoove call $bam \\
+    smoove call $bam \\
         --processes $task.cpus \\
         --outdir . \\
         --exclude $exclude \\
         --name $sam \\
         --fasta $ref_fa \\
         --genotype
+        
     mv $smoove_vcf $out_vcf
     mv ${smoove_vcf}.csi ${out_vcf}.csi
     """

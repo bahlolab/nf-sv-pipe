@@ -1,8 +1,9 @@
 
 process MATCHA_COLLAPSE {
     label 'bcftools'
-    label 'C2M16T4'
+    label 'C2M4T4'
     tag "$sam"
+    publishDir "$params.outdir/collapse"
 
     input:
     tuple val(sam), val(callers), path(bcfs), path(csis)
@@ -15,6 +16,9 @@ process MATCHA_COLLAPSE {
     out_bcf = "${sam}.collapsed.bcf"
     def inputs = [callers, bcfs].transpose().collect { caller, bcf -> "${caller}:${bcf}" }.join(' ')
     def chrs_arg = chrs?.trim() ? "--chrs ${chrs}" : ""
+    def filter_cmd = params.matcha_sample_filter \
+        ? "bcftools view --threads ${task.cpus} -i '${params.matcha_sample_filter}' -Ob -o ${out_bcf} unfiltered.bcf" \
+        : "mv unfiltered.bcf ${out_bcf}"
     """
     export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/lib
 
@@ -23,6 +27,9 @@ process MATCHA_COLLAPSE {
         ${chrs_arg} \\
         --min-jaccard ${params.matcha_min_jaccard} \\
         --threads ${task.cpus} \\
-        -o ${out_bcf}
+        -o unfiltered.bcf
+
+    ${filter_cmd}
+    bcftools index --threads ${task.cpus} ${out_bcf}
     """
 }

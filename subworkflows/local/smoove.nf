@@ -2,7 +2,6 @@
 include { SMOOVE_CALL     as CALL     } from '../../modules/local/smoove_call'
 include { SMOOVE_MERGE    as MERGE    } from '../../modules/local/smoove_merge'
 include { SMOOVE_GENOTYPE as GENOTYPE } from '../../modules/local/smoove_genotype'
-include { SMOOVE_TO_BCF   as TO_BCF   } from '../../modules/local/smoove_to_bcf'
 
 workflow SMOOVE {
     take:
@@ -28,26 +27,27 @@ workflow SMOOVE {
             multi:     true
         }
 
-        // Singletons: use CALL output directly (already genotyped via --genotype)
-        singleton_vcfs = branched.singleton
-            .map { fam, sams, vcfs, csis -> [sams[0], vcfs[0], csis[0]] }
+        // Singletons: use the sample's own CALL output as the sites VCF for GENOTYPE
+        singleton_sites = branched.singleton
+            .map { fam, sams, vcfs, csis -> [fam, vcfs[0]] }
 
-        // Multi-member families: one merge per family, then re-genotype each sample
+        // Multi-member families: merge per-sample calls into a family sites VCF
         MERGE(
             branched.multi.map { fam, sams, vcfs, csis -> [fam, vcfs, csis] },
             ref_ch
         )
 
-        // Pair each sample in multi-member families with their family's sites VCF
-        genotype_in = MERGE.out
+        // Unified per-family sites VCF channel
+        sites_ch = singleton_sites.mix(MERGE.out)
+
+        // Pair each sample with its family's sites VCF and re-genotype
+        genotype_in = sites_ch
             .combine(fam_bam_ch.map { fam, sam, bam, bai -> [fam, sam, bam, bai] }, by: 0)
             .map { fam, sites_vcf, sam, bam, bai -> [sam, bam, bai, sites_vcf] }
 
         GENOTYPE(genotype_in, ref_ch)
 
-        TO_BCF(singleton_vcfs.mix(GENOTYPE.out))
-
-        vcfs = TO_BCF.out.map { sam, bcf, csi -> ['SMOOVE', sam, bcf, csi] }
+        vcfs = GENOTYPE.out.map { sam, bcf, csi -> ['SMOOVE', sam, bcf, csi] }
 
     emit:
         vcfs
