@@ -6,6 +6,7 @@ include { path               } from './helpers'
 include { read_tsv           } from './helpers'
 include { check_test_fixtures} from './helpers'
 include { check_callers      } from './helpers'
+include { check_apply_filters} from './helpers'
 include { get_chrs_ch        } from './helpers'
 include { CHORUS             } from './workflows/sv_calling'
 
@@ -13,6 +14,7 @@ workflow {
 
     check_test_fixtures()
     check_callers()
+    check_apply_filters()
 
     def ped     = read_tsv(path(params.ped),  ['fid', 'iid', 'pid', 'mid', 'sex', 'phe'])
     def bams    = read_tsv(path(params.bams), ['iid', 'bam'])

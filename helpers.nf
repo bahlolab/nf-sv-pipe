@@ -26,7 +26,7 @@ def check_test_fixtures() {
 }
 
 def check_callers() {
-    def supported = ['MANTA', 'SMOOVE', 'CNVNATOR', 'DELLY', 'DELLY_CNV']
+    def supported = ['MANTA', 'SMOOVE', 'CNVNATOR', 'DELLY', 'DELLY_CNV', 'DYSGU']
     def unsupported = params.callers - supported
     if (unsupported) {
         error "Unsupported callers in params.callers: ${unsupported}. Supported: ${supported}"
@@ -34,6 +34,13 @@ def check_callers() {
     def dups = params.callers.countBy { it }.findAll { k, n -> n > 1 }.keySet()
     if (dups) {
         error "Duplicate callers in params.callers: ${dups}"
+    }
+}
+
+def check_apply_filters() {
+    def not_called = params.apply_filters - params.callers
+    if (not_called) {
+        error "params.apply_filters contains callers not in params.callers: ${not_called}"
     }
 }
 
