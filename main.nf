@@ -8,7 +8,7 @@ include { check_test_fixtures} from './helpers'
 include { check_callers      } from './helpers'
 include { check_apply_filters} from './helpers'
 include { get_chrs_ch        } from './helpers'
-include { CHORUS             } from './workflows/sv_calling'
+include { SVPLEX             } from './workflows/sv_plex'
 
 workflow {
 
@@ -30,5 +30,5 @@ workflow {
             .combine(ped.collect { [it.iid, it.fid] }, by: 0)
             .map { iid, bam, bai, fid -> [params.familial ? fid : iid, iid, bam, bai] }
 
-    CHORUS(ref_ch, chrs_ch, fam_bam_ch)
+    SVPLEX(ref_ch, chrs_ch, fam_bam_ch)
 }

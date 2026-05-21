@@ -11,7 +11,7 @@ include { COPY_BAMS             } from '../modules/local/copy_bams'
 include { PASS_FILTER           } from '../modules/local/pass_filter'
 include { MATCHA                } from '../subworkflows/local/matcha'
 
-workflow CHORUS {
+workflow SVPLEX {
     take:
         ref_ch      // value channel: [ref_fa, ref_fai]
         chrs_ch     // value channel: List<String> (empty list = no restriction)
@@ -20,6 +20,10 @@ workflow CHORUS {
     main:
         vcfs = channel.empty()
 
+        fam_bam_ch = fam_bam_ch
+            .groupTuple(by:0)
+            .map {fam, sam, bam, bai -> [ groupKey(fam, sam.size()), sam, bam, bai] }
+            .transpose()
 
         def needs_ref = params.callers.intersect(['MANTA', 'SMOOVE', 'DELLY', 'DELLY_CNV'])
         if (needs_ref) { FETCH_REFERENCE_FILES() }
