@@ -1,0 +1,69 @@
+
+process TRUVARI_COLLAPSE {
+    label 'bcftools_truvari'
+    label 'C2M4T4'
+    tag "$sam"
+    publishDir "$params.outdir/truvari_collapse"
+
+    input:
+    tuple val(sam), val(callers), path(bcfs), path(csis)
+
+    output:
+    tuple val(sam), path(out_bcf), path("${out_bcf}.csi")
+
+    script:
+    out_bcf = "${sam}.truvari.collapsed.bcf"
+    def filter_cmd = params.truvari_sample_filter \
+        ? "bcftools view --threads ${task.cpus} -i '${params.truvari_sample_filter}' -Ob -o ${out_bcf} collapsed.vcf.gz" \
+        : "bcftools view --threads ${task.cpus} -Ob -o ${out_bcf} collapsed.vcf.gz"
+    """
+    trimmed=""
+    for BCF in ${bcfs.join(' ')}; do
+        out="\${BCF%.bcf}.gt.bcf"
+        bcftools annotate --threads ${task.cpus} -x '^FORMAT/GT' "\$BCF" -Ob -o "\$out"
+        bcftools index --threads ${task.cpus} "\$out"
+        trimmed="\$trimmed \$out"
+    done
+
+    bcftools merge -m id --force-samples --threads ${task.cpus} \\
+        -Oz -o merged.vcf.gz \$trimmed
+    bcftools index -t --threads ${task.cpus} merged.vcf.gz
+
+    bcftools view -i 'INFO/SVTYPE="DEL" || INFO/SVTYPE="DUP" || INFO/SVTYPE="INV"' \\
+        --threads ${task.cpus} -Oz -o sv.vcf.gz merged.vcf.gz
+    bcftools index -t --threads ${task.cpus} sv.vcf.gz
+
+    bcftools view -i 'INFO/SVTYPE="BND" || INFO/SVTYPE="INS"' \\
+        --threads ${task.cpus} -Oz -o bnd.vcf.gz merged.vcf.gz
+    bcftools index -t --threads ${task.cpus} bnd.vcf.gz
+
+    truvari collapse \\
+        -i sv.vcf.gz \\
+        -o sv_collapsed.vcf.gz \\
+        --intra \\
+        --chain \\
+        --refdist ${params.truvari_itvl_refdist} \\
+        --pctovl  ${params.truvari_itvl_pctovl} \\
+        --pctsize 0.0 \\
+        --pctseq 0.0
+
+    truvari collapse \\
+        -i bnd.vcf.gz \\
+        -o bnd_collapsed.vcf.gz \\
+        --intra \\
+        --chain \\
+        --refdist ${params.truvari_bnd_refdist} \\
+        --bnddist ${params.truvari_bnddist} \\
+        --pctovl 0.0 \\
+        --pctsize ${params.truvari_bnd_pctsize} \\
+        --pctseq 0.0
+
+    bcftools index -t --threads ${task.cpus} sv_collapsed.vcf.gz
+    bcftools index -t --threads ${task.cpus} bnd_collapsed.vcf.gz
+    bcftools concat --allow-overlaps --threads ${task.cpus} \\
+        sv_collapsed.vcf.gz bnd_collapsed.vcf.gz -Oz -o collapsed.vcf.gz
+
+    ${filter_cmd}
+    bcftools index --threads ${task.cpus} ${out_bcf}
+    """
+}

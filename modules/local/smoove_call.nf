@@ -1,7 +1,7 @@
 
 process SMOOVE_CALL {
     label 'smoove'
-    label 'C2M16T4'
+    label 'C2M16T8'
     tag { sam }
     storeDir params.cachedir ? "${params.cachedir}/SMOOVE_CALL" : null
 

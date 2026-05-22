@@ -1,18 +1,15 @@
 
-include { MATCHA_COLLAPSE as COLLAPSE } from '../../modules/local/matcha_collapse'
-include { MATCHA_MERGE    as MERGE    } from '../../modules/local/matcha_merge'
-include { DUPHOLD                     } from '../../modules/local/duphold'
+include { TRUVARI_COLLAPSE as COLLAPSE } from '../../modules/local/truvari_collapse'
+include { TRUVARI_MERGE    as MERGE    } from '../../modules/local/truvari_merge'
+include { DUPHOLD                      } from '../../modules/local/duphold'
 
-workflow MATCHA {
+workflow TRUVARI {
     take:
         vcfs    // queue: [caller, sam, bcf, csi]
-        chrs_ch // value channel: List<String> (empty list = no restriction)
         bam_ch  // queue: [sam, bam, bai]
         ref_ch  // value channel: [ref_fa, ref_fai]
 
     main:
-        chrs_str_ch = chrs_ch.map { it ? it.join(',') : '' }
-
         per_sample = vcfs
             .map { caller, sam, bcf, csi -> [groupKey(sam.toString(), params.callers.size()), caller, bcf, csi] }
             .groupTuple(by:0)
@@ -23,10 +20,10 @@ workflow MATCHA {
                 [sam.target, sorted[0], sorted[1], sorted[2]]
             }
 
-        COLLAPSE(per_sample, chrs_str_ch)
+        COLLAPSE(per_sample)
 
         to_merge = COLLAPSE.out
-        if (params.matcha_duphold) {
+        if (params.truvari_duphold) {
             DUPHOLD(COLLAPSE.out.join(bam_ch), ref_ch)
             to_merge = DUPHOLD.out
         }

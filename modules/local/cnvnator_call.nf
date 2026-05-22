@@ -1,6 +1,6 @@
 
 process CNVNATOR_CALL {
-    label 'C2M16T4'
+    label 'C2M16T8'
     label 'cnvnator'
     tag { sam }
     storeDir params.cachedir ? "${params.cachedir}/CNVNATOR_CALL" : null
@@ -18,10 +18,10 @@ process CNVNATOR_CALL {
     chrom_arg = chrs?.trim() ? "-chrom ${chrs}" : ""
     """
     cnvnator -root ${sam}.root -genome ${params.assembly} ${chrom_arg} -tree ${bam}
-    cnvnator -root ${sam}.root -genome ${params.assembly} ${chrom_arg} -his ${params.bin_size} -d $ref_dir
-    cnvnator -root ${sam}.root -stat ${params.bin_size}
-    cnvnator -root ${sam}.root -partition ${params.bin_size}
-    cnvnator -root ${sam}.root -call ${params.bin_size} > $out
+    cnvnator -root ${sam}.root -genome ${params.assembly} ${chrom_arg} -his ${params.cnvnator_bin_size} -d $ref_dir
+    cnvnator -root ${sam}.root -stat ${params.cnvnator_bin_size}
+    cnvnator -root ${sam}.root -partition ${params.cnvnator_bin_size}
+    cnvnator -root ${sam}.root -call ${params.cnvnator_bin_size} > $out
     rm ${sam}.root
     """
 }

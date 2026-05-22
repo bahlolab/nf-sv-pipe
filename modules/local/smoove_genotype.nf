@@ -15,19 +15,14 @@ process SMOOVE_GENOTYPE {
     smoove_vcf = "${sam}-smoove.genotyped.vcf.gz"
     out_bcf    = "${sam}.SMOOVE.bcf"
     """
-    smoove genotype $bam -d -x \\
+    smoove genotype $bam -x \\
         --processes $task.cpus \\
         --name ${sam} \\
         --outdir . \\
         --fasta $ref_fa \\
         --vcf $sites_vcf
    
-    # Soft-filter DEL/DUP by smoove's read-depth fold-change support; other SVTYPEs are untouched.
-    bcftools view -i 'SVTYPE="DEL"' $smoove_vcf -Ou | bcftools filter -e 'FMT/DHFFC[0] > 0.7' -s hiDHFFC -Ob -o del.bcf
-    bcftools view -i 'SVTYPE="DUP"' $smoove_vcf -Ou | bcftools filter -e 'FMT/DHBFC[0] < 1.3' -s loDHBFC -Ob -o dup.bcf
-    bcftools view --threads ${task.cpus} -e 'SVTYPE="DEL" || SVTYPE="DUP"' $smoove_vcf -Ob -o other.bcf 
-    ls del.bcf dup.bcf other.bcf | xargs -n1 bcftools index --threads  ${task.cpus}
-    bcftools concat -a --threads ${task.cpus} del.bcf dup.bcf other.bcf -Ob -o $out_bcf
+    bcftools view --threads ${task.cpus} $smoove_vcf -Ob -o $out_bcf
     bcftools index --threads ${task.cpus} $out_bcf
     """
 }

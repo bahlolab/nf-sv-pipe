@@ -10,6 +10,7 @@ include { MAKE_CALL_REGIONS     } from '../modules/local/make_call_regions'
 include { COPY_BAMS             } from '../modules/local/copy_bams'
 include { PASS_FILTER           } from '../modules/local/pass_filter'
 include { MATCHA                } from '../subworkflows/local/matcha'
+include { TRUVARI               } from '../subworkflows/local/truvari'
 
 workflow SVPLEX {
     take:
@@ -46,10 +47,28 @@ workflow SVPLEX {
         }
         vcfs = PASS_FILTER(branched.filter).mix(branched.no_filter)
 
-        MATCHA(vcfs, chrs_ch)
+        matcha_collapsed  = channel.empty()
+        matcha_merged     = channel.empty()
+        truvari_collapsed = channel.empty()
+        truvari_merged    = channel.empty()
+
+        sam_bam_ch = fam_bam_ch.map { _fam, sam, bam, bai -> [sam, bam, bai] }
+
+        if (params.matcha) {
+            MATCHA(vcfs, chrs_ch, sam_bam_ch, ref_ch)
+            matcha_collapsed = MATCHA.out.collapsed
+            matcha_merged    = MATCHA.out.merged
+        }
+        if (params.truvari) {
+            TRUVARI(vcfs, sam_bam_ch, ref_ch)
+            truvari_collapsed = TRUVARI.out.collapsed
+            truvari_merged    = TRUVARI.out.merged
+        }
 
     emit:
-        vcfs      = vcfs                 // [caller, sam, bcf, csi]
-        collapsed = MATCHA.out.collapsed // [sam, bcf, csi]
-        merged    = MATCHA.out.merged    // [cohort.bcf, cohort.bcf.csi]
+        vcfs              = vcfs              // [caller, sam, bcf, csi]
+        matcha_collapsed  = matcha_collapsed  // [sam, bcf, csi]
+        matcha_merged     = matcha_merged     // [cohort.bcf, cohort.bcf.csi]
+        truvari_collapsed = truvari_collapsed // [sam, bcf, csi]
+        truvari_merged    = truvari_merged    // [cohort.bcf, cohort.bcf.csi]
 }

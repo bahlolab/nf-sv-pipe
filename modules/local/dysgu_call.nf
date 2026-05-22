@@ -1,7 +1,7 @@
 
 process DYSGU_CALL {
     label 'dysgu'
-    label 'C2M8T8'
+    label 'C2M16T8'
     tag { sam }
     storeDir params.cachedir ? "${params.cachedir}/DYSGU_CALL" : null
 
