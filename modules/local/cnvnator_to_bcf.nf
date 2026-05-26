@@ -3,6 +3,8 @@ process CNVNATOR_TO_BCF {
     label 'bcftools'
     label 'C2M2T2'
     tag { sam }
+    publishDir "$params.outdir/CNVNATOR"
+
 
     input:
     tuple val(sam), path(cnvnator_out)

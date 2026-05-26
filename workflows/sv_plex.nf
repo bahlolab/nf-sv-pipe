@@ -11,6 +11,7 @@ include { COPY_BAMS             } from '../modules/local/copy_bams'
 include { PASS_FILTER           } from '../modules/local/pass_filter'
 include { MATCHA                } from '../subworkflows/local/matcha'
 include { TRUVARI               } from '../subworkflows/local/truvari'
+include { SVDB                  } from '../subworkflows/local/svdb'
 
 workflow SVPLEX {
     take:
@@ -51,6 +52,8 @@ workflow SVPLEX {
         matcha_merged     = channel.empty()
         truvari_collapsed = channel.empty()
         truvari_merged    = channel.empty()
+        svdb_collapsed    = channel.empty()
+        svdb_merged       = channel.empty()
 
         sam_bam_ch = fam_bam_ch.map { _fam, sam, bam, bai -> [sam, bam, bai] }
 
@@ -64,6 +67,11 @@ workflow SVPLEX {
             truvari_collapsed = TRUVARI.out.collapsed
             truvari_merged    = TRUVARI.out.merged
         }
+        if (params.svdb) {
+            SVDB(vcfs, chrs_ch, sam_bam_ch, ref_ch)
+            svdb_collapsed = SVDB.out.collapsed
+            svdb_merged    = SVDB.out.merged
+        }
 
     emit:
         vcfs              = vcfs              // [caller, sam, bcf, csi]
@@ -71,4 +79,6 @@ workflow SVPLEX {
         matcha_merged     = matcha_merged     // [cohort.bcf, cohort.bcf.csi]
         truvari_collapsed = truvari_collapsed // [sam, bcf, csi]
         truvari_merged    = truvari_merged    // [cohort.bcf, cohort.bcf.csi]
+        svdb_collapsed    = svdb_collapsed    // [sam, bcf, csi]
+        svdb_merged       = svdb_merged       // [cohort.bcf, cohort.bcf.csi]
 }

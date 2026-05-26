@@ -12,8 +12,15 @@ process DELLY_CNV_NORM {
 
     script:
     out_bcf = "${sam}.delly_cnv_norm.bcf"
+    def max_calls = params.delly_cnv_max_calls
+    def qual_filter = max_calls ?
+        """
+        min_qual=\$(bcftools query -f '%QUAL\\n' ${bcf} | sort -rn | sed -n '${max_calls}p')
+        [ -n "\$min_qual" ] && view_args="-i QUAL>=\$min_qual" || view_args=''
+        """ : "view_args=''"
     """
-    bcftools view ${bcf} \\
+    ${qual_filter}
+    bcftools view \$view_args ${bcf} \\
         | delly_cnv_norm.awk \\
         | bcftools view --threads ${task.cpus} -Ob -o ${out_bcf}
     bcftools index --threads ${task.cpus} ${out_bcf}

@@ -1,6 +1,6 @@
-# nf-sv-plex
+# SVPLEX
 
-Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://github.com/Illumina/manta), [DYSGU](https://github.com/kcleal/dysgu), [SMOOVE](https://github.com/brentp/smoove), [DELLY](https://github.com/dellytools/delly), DELLY_CNV, [CNVNATOR](https://github.com/abyzovlab/CNVnator)) with cross-caller merging via [matcha](https://github.com/jemunro/matcha) and/or [truvari](https://github.com/acenglish/truvari) (toggle either branch with `params.matcha` / `params.truvari`).
+Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://github.com/Illumina/manta), [DYSGU](https://github.com/kcleal/dysgu), [SMOOVE](https://github.com/brentp/smoove), [DELLY](https://github.com/dellytools/delly), [DELLY_CNV](https://github.com/dellytools/delly), [CNVNATOR](https://github.com/abyzovlab/CNVnator)) with cross-caller merging via [matcha](https://github.com/jemunro/matcha), [truvari](https://github.com/acenglish/truvari), and/or [SVDB](https://github.com/J35P312/SVDB) (toggle any branch with `params.matcha` / `params.truvari` / `params.svdb`).
 
 ## Prerequisites
 
@@ -51,6 +51,7 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `chrs` | Chromosomes to process; `null` = no restriction, `'auto'` = autosomes + X/Y (default), or a list of names |
 | `matcha` | Run the MATCHA merge branch (default: `true`) |
 | `truvari` | Run the TRUVARI merge branch (default: `true`) |
+| `svdb` | Run the SVDB merge branch (default: `true`) |
 | `duphold` | Run duphold between per-sample collapse and cohort merge to filter low-quality DEL/DUP calls (default: `true`) |
 
 <details>
@@ -63,6 +64,7 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `refdir` | Directory for downloaded reference files (mappability, exclude lists); default: `'reference_files'` |
 | `cachedir` | `storeDir` path for cacheable call outputs; `null` = always re-run (default) |
 | `min_mapq` | Minimum mapping quality for reads (default: `15`) |
+| `delly_cnv_max_calls` | If set, cap DELLY_CNV per-sample callsets to this many calls (top N by QUAL) before normalisation (default: `null`) |
 | `cnvnator_bin_size` | CNVnator bin size in bp (default: `1000`) |
 | `duphold_min_size` | Minimum DEL/DUP size in bp for duphold annotation; smaller variants bypass duphold (default: `1000`) |
 | `duphold_del_dhffc` | Exclude DELs where `FMT/DHFFC[0]` exceeds this threshold (default: `0.75`) |
@@ -77,6 +79,10 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `truvari_bnd_pctsize` | BND/INS collapse `--pctsize` — min size similarity fraction (default: `0.75`) |
 | `truvari_sample_filter` | bcftools filter expression applied after per-sample truvari collapse; default keeps PASS or consolidated calls |
 | `truvari_cohort_filter` | bcftools filter expression applied after truvari cohort merge (default: `null` — no filter) |
+| `svdb_overlap` | SVDB `--overlap`: min reciprocal overlap fraction for merging, both stages (default: `0.7`) |
+| `svdb_bnd_distance` | SVDB `--bnd_distance`: max bp distance between precise breakpoints, both stages (default: `500`) |
+| `svdb_sample_filter` | bcftools filter expression applied after per-sample SVDB collapse (default: `null` — no filter) |
+| `svdb_cohort_filter` | bcftools filter expression applied after SVDB cohort merge (default: `null` — no filter) |
 
 </details>
 
@@ -90,6 +96,8 @@ Outputs are written to `params.outdir` (default: `output/`) in the run directory
 | `<id>.cohort.bcf` (+ `.csi`) | Cohort-level BCF with per-sample matcha-collapsed calls merged across samples (only if `params.matcha`) |
 | `truvari_collapse/<sample>.truvari.collapsed.bcf` (+ `.csi`) | Per-sample BCF with calls from all callers collapsed by truvari (only if `params.truvari`) |
 | `<id>.truvari.cohort.bcf` (+ `.csi`) | Cohort-level BCF with per-sample truvari-collapsed calls merged across samples (only if `params.truvari`) |
+| `svdb_collapse/<sample>.svdb.collapsed.bcf` (+ `.csi`) | Per-sample BCF with calls from all callers collapsed by SVDB (only if `params.svdb`) |
+| `<id>.svdb.cohort.bcf` (+ `.csi`) | Cohort-level BCF with per-sample SVDB-collapsed calls merged across samples (only if `params.svdb`) |
 
 ## Implementation
 
@@ -101,3 +109,5 @@ Outputs are written to `params.outdir` (default: `output/`) in the run directory
 * **DUPHOLD** (when `params.duphold = true`): After per-sample collapse, duphold annotates DEL/DUP variants ≥ `params.duphold_min_size` with depth-fold-change fields (`FMT/DHFFC`, `FMT/DHBFC`). DELs with `DHFFC > params.duphold_del_dhffc` and DUPs with `DHBFC < params.duphold_dup_dhbfc` are dropped. Smaller variants and non-DEL/DUP SVTYPE values bypass duphold and are merged back before the cohort step. Applies to both MATCHA and TRUVARI branches.
 * **MATCHA cohort merge**: `matcha merge` pools all per-sample collapsed BCFs into a single cohort BCF.
 * **TRUVARI cohort merge**: `bcftools merge -m id` pools per-sample collapsed BCFs into a multi-sample VCF, then the same DEL/DUP/INV / BND/INS split-collapse approach runs without `--intra`.
+* **SVDB per-sample collapse**: BCFs are converted to VCF.gz; `svdb --merge --priority <callers>` merges them with caller priority matching `params.callers` order.
+* **SVDB cohort merge**: Per-sample SVDB-collapsed BCFs are converted to VCF.gz; `svdb --merge` merges across samples. No caller priority is applied at this stage.

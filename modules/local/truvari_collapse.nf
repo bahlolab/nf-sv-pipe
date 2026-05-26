@@ -14,8 +14,8 @@ process TRUVARI_COLLAPSE {
     script:
     out_bcf = "${sam}.truvari.collapsed.bcf"
     def filter_cmd = params.truvari_sample_filter \
-        ? "bcftools view --threads ${task.cpus} -i '${params.truvari_sample_filter}' -Ob -o ${out_bcf} collapsed.vcf.gz" \
-        : "bcftools view --threads ${task.cpus} -Ob -o ${out_bcf} collapsed.vcf.gz"
+        ? "bcftools view --threads ${task.cpus} -i '${params.truvari_sample_filter}' -Ob -o ${out_bcf} collapsed.bcf" \
+        : "mv collapsed.bcf ${out_bcf}"
     """
     trimmed=""
     for BCF in ${bcfs.join(' ')}; do
@@ -65,7 +65,7 @@ process TRUVARI_COLLAPSE {
     bcftools index -t --threads ${task.cpus} bnd_collapsed.vcf.gz
     
     bcftools concat --allow-overlaps --threads ${task.cpus} \\
-        sv_collapsed.vcf.gz bnd_collapsed.vcf.gz -Oz -o collapsed.vcf.gz
+        sv_collapsed.vcf.gz bnd_collapsed.vcf.gz -Ob -o collapsed.bcf
 
     ${filter_cmd}
     bcftools index --threads ${task.cpus} ${out_bcf}

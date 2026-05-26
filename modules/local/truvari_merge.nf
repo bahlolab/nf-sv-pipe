@@ -2,7 +2,7 @@
 process TRUVARI_MERGE {
     label 'bcftools_truvari'
     label 'C4M16T4'
-    publishDir "$params.outdir"
+    publishDir "$params.outdir", mode: 'copy'
 
     input:
     path(bcfs)
@@ -14,8 +14,8 @@ process TRUVARI_MERGE {
     script:
     out_bcf = "${params.id}.truvari.cohort.bcf"
     def filter_cmd = params.truvari_cohort_filter \
-        ? "bcftools view --threads ${task.cpus} -i '${params.truvari_cohort_filter}' -Ob -o ${out_bcf} collapsed.vcf.gz" \
-        : "bcftools view --threads ${task.cpus} -Ob -o ${out_bcf} collapsed.vcf.gz"
+        ? "bcftools view --threads ${task.cpus} -i '${params.truvari_cohort_filter}' -Ob -o ${out_bcf} collapsed.bcf" \
+        : "mv collapsed.bcf ${out_bcf}"
     """
     bcftools merge -m none --threads ${task.cpus} -Oz -o merged.vcf.gz ${bcfs.join(' ')}
     bcftools index -t --threads ${task.cpus} merged.vcf.gz
@@ -54,7 +54,7 @@ process TRUVARI_MERGE {
     bcftools index -t --threads ${task.cpus} sv_collapsed.vcf.gz
     bcftools index -t --threads ${task.cpus} bnd_collapsed.vcf.gz
     bcftools concat --allow-overlaps --threads ${task.cpus} \\
-        sv_collapsed.vcf.gz bnd_collapsed.vcf.gz -Oz -o collapsed.vcf.gz
+        sv_collapsed.vcf.gz bnd_collapsed.vcf.gz -Ob -o collapsed.bcf
 
     ${filter_cmd}
     bcftools index --threads ${task.cpus} ${out_bcf}

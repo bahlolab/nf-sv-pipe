@@ -15,6 +15,9 @@ process MATCHA_MERGE {
     out_bcf = chr ? "${params.id}.${chr}.cohort.bcf" : "${params.id}.cohort.bcf"
     def chr_arg     = chr     ? "--chrs ${chr}"        : ""
     def chr_set_arg = chr_set ? "--chr-set ${chr_set}" : ""
+    def filter_cmd  = params.matcha_cohort_filter
+        ? "bcftools view --threads ${task.cpus} -i '${params.matcha_cohort_filter}' -Ob -o ${out_bcf} merged.bcf"
+        : "mv merged.bcf ${out_bcf}"
     """
     export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/lib
 
@@ -22,10 +25,12 @@ process MATCHA_MERGE {
         --min-jaccard ${params.matcha_min_jaccard} \\
         --threads ${task.cpus} \\
         --missing-to-ref \\
-        --write-index \\
         ${chr_arg} \\
         ${chr_set_arg} \\
-        -o ${out_bcf} \\
+        -o merged.bcf \\
         ${bcfs.join(' ')}
+
+    ${filter_cmd}
+    bcftools index --threads ${task.cpus} ${out_bcf}
     """
 }
