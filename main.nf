@@ -19,9 +19,12 @@ workflow {
     def ped     = read_tsv(path(params.ped),  ['fid', 'iid', 'pid', 'mid', 'sex', 'phe'])
     def bams    = read_tsv(path(params.bams), ['iid', 'bam'])
     def ref_fa  = path(params.ref_fasta)
-    def ref_fai = path(params.ref_fasta + '.fai')
+    def ref_idx = [path(params.ref_fasta + '.fai')]
+    if (params.ref_fasta.endsWith('.gz')) {
+        ref_idx << path(params.ref_fasta + '.gzi')
+    }
 
-    def ref_ch  = Channel.value([ref_fa, ref_fai])
+    def ref_ch  = Channel.value([ref_fa, ref_idx])
     def chrs_ch = get_chrs_ch()
 
     def fam_bam_ch =

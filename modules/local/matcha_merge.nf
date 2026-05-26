@@ -1,7 +1,7 @@
 
 process MATCHA_MERGE {
     label 'bcftools'
-    label 'C4M16T4'
+    label 'C16M32T4'
     publishDir "$params.outdir"
 
     input:
@@ -19,6 +19,7 @@ process MATCHA_MERGE {
     matcha merge \\
         --min-jaccard ${params.matcha_min_jaccard} \\
         --threads ${task.cpus} \\
+        --use-shm \\
         -o ${out_bcf} \\
         ${bcfs.join(' ')}
     """

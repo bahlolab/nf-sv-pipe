@@ -5,7 +5,7 @@ include { CNVNATOR_TO_BCF      as TO_BCF      } from '../../modules/local/cnvnat
 
 workflow CNVNATOR {
     take:
-        ref_ch      // value channel: [ref_fa, ref_fai]
+        ref_ch      // value channel: [ref_fa, [ref_fai, ref_gzi?]]
         chrs_ch     // value channel: List<String> (empty list = no restriction)
         fam_bam_ch  // queue: [fam, sam, bam, bai]
 

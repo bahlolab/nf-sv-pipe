@@ -5,7 +5,7 @@ include { DELLY_GENOTYPE as GENOTYPE } from '../../modules/local/delly_genotype'
 
 workflow DELLY {
     take:
-        ref_ch      // value: [ref_fa, ref_fai]
+        ref_ch      // value: [ref_fa, [ref_fai, ref_gzi?]]
         fam_bam_ch  // queue: [fam, sam, bam, bai]
         excl_ch     // value: delly exclude TSV
 

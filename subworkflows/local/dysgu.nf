@@ -4,7 +4,7 @@ include { DYSGU_TO_BCF as TO_BCF } from '../../modules/local/dysgu_to_bcf'
 
 workflow DYSGU {
     take:
-        ref_ch      // value: [ref_fa, ref_fai]
+        ref_ch      // value: [ref_fa, [ref_fai, ref_gzi?]]
         fam_bam_ch  // queue: [fam, sam, bam, bai]
 
     main:

@@ -7,7 +7,7 @@ workflow TRUVARI {
     take:
         vcfs    // queue: [caller, sam, bcf, csi]
         bam_ch  // queue: [sam, bam, bai]
-        ref_ch  // value channel: [ref_fa, ref_fai]
+        ref_ch  // value channel: [ref_fa, [ref_fai, ref_gzi?]]
 
     main:
         per_sample = vcfs

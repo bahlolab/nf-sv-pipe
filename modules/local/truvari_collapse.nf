@@ -25,7 +25,7 @@ process TRUVARI_COLLAPSE {
         trimmed="\$trimmed \$out"
     done
 
-    bcftools merge -m id --force-samples --threads ${task.cpus} \\
+    bcftools merge -m none --force-samples --threads ${task.cpus} \\
         -Oz -o merged.vcf.gz \$trimmed
     bcftools index -t --threads ${task.cpus} merged.vcf.gz
 
@@ -39,17 +39,21 @@ process TRUVARI_COLLAPSE {
 
     truvari collapse \\
         -i sv.vcf.gz \\
-        -o sv_collapsed.vcf.gz \\
+        -o sv_collapsed.vcf \\
+        -c removed_sv.vcf.gz \\
         --intra \\
         --chain \\
         --refdist ${params.truvari_itvl_refdist} \\
         --pctovl  ${params.truvari_itvl_pctovl} \\
         --pctsize 0.0 \\
         --pctseq 0.0
+    bcftools sort -Oz -o sv_collapsed.vcf.gz sv_collapsed.vcf && rm sv_collapsed.vcf
+    bcftools index -t --threads ${task.cpus} sv_collapsed.vcf.gz
 
     truvari collapse \\
         -i bnd.vcf.gz \\
-        -o bnd_collapsed.vcf.gz \\
+        -o bnd_collapsed.vcf \\
+        -c removed_bnd.vcf.gz \\
         --intra \\
         --chain \\
         --refdist ${params.truvari_bnd_refdist} \\
@@ -57,9 +61,9 @@ process TRUVARI_COLLAPSE {
         --pctovl 0.0 \\
         --pctsize ${params.truvari_bnd_pctsize} \\
         --pctseq 0.0
-
-    bcftools index -t --threads ${task.cpus} sv_collapsed.vcf.gz
+    bcftools sort -Oz -o bnd_collapsed.vcf.gz bnd_collapsed.vcf && rm bnd_collapsed.vcf
     bcftools index -t --threads ${task.cpus} bnd_collapsed.vcf.gz
+    
     bcftools concat --allow-overlaps --threads ${task.cpus} \\
         sv_collapsed.vcf.gz bnd_collapsed.vcf.gz -Oz -o collapsed.vcf.gz
 

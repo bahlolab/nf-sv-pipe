@@ -7,7 +7,7 @@ process DELLY_CNV_CALL {
 
     input:
     tuple val(sam), path(bam), path(bai)
-    tuple path(ref_fa), path(ref_fai)
+    tuple path(ref_fa), path(ref_idx)
     tuple path(map_fa), path(map_gzi), path(map_fai)
 
     output:
@@ -16,6 +16,6 @@ process DELLY_CNV_CALL {
     script:
     out_bcf = "${sam}.delly_cnv.bcf"
     """
-    delly cnv -g $ref_fa -m $map_fa -o $out_bcf $bam
+    delly cnv -q ${params.min_mapq} -g $ref_fa -m $map_fa -o $out_bcf $bam
     """
 }

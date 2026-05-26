@@ -7,7 +7,7 @@ process MANTA_CALL {
 
     input:
     tuple val(fam), path(bam), path(bai)
-    tuple path(ref_fa), path(ref_fai)
+    tuple path(ref_fa), path(ref_idx)
     tuple path(call_regions), path(call_regions_tbi)
 
     output:

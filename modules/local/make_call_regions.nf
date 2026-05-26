@@ -4,7 +4,7 @@ process MAKE_CALL_REGIONS {
     label 'C2M2T2'
 
     input:
-    tuple path(ref_fa), path(ref_fai)
+    tuple path(ref_fa), path(ref_idx)
     val(chrs)
     path(excl_tsv)
 
@@ -13,7 +13,7 @@ process MAKE_CALL_REGIONS {
 
     script:
     """
-    make_call_regions.awk -v chrs="${chrs.join(',')}" $ref_fai $excl_tsv \\
+    make_call_regions.awk -v chrs="${chrs.join(',')}" ${ref_fa}.fai $excl_tsv \\
         | sort -k1,1 -k2,2n \\
         | bgzip > call_regions.bed.gz
     tabix -p bed call_regions.bed.gz

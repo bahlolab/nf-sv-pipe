@@ -6,7 +6,7 @@ include { DELLY_CNV_NORM     as NORM     } from '../../modules/local/delly_cnv_n
 
 workflow DELLY_CNV {
     take:
-        ref_ch      // value: [ref_fa, ref_fai]
+        ref_ch      // value: [ref_fa, [ref_fai, ref_gzi?]]
         fam_bam_ch  // queue: [fam, sam, bam, bai]
         map_ch      // value: [map_fa, map_gzi, map_fai]
 

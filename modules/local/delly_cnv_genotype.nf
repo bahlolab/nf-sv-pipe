@@ -6,7 +6,7 @@ process DELLY_CNV_GENOTYPE {
 
     input:
     tuple val(sam), path(bam), path(bai), path(sites_bcf), path(sites_csi)
-    tuple path(ref_fa), path(ref_fai)
+    tuple path(ref_fa), path(ref_idx)
     tuple path(map_fa), path(map_gzi), path(map_fai)
 
     output:

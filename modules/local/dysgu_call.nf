@@ -7,7 +7,7 @@ process DYSGU_CALL {
 
     input:
     tuple val(sam), path(bam), path(bai)
-    tuple path(ref_fa), path(ref_fai)
+    tuple path(ref_fa), path(ref_idx)
 
     output:
     tuple val(sam), path(out_vcf)
@@ -15,7 +15,11 @@ process DYSGU_CALL {
     script:
     out_vcf = "${sam}.dysgu.vcf.gz"
     """
-    dysgu call -p${task.cpus} $ref_fa wd_${sam} $bam \\
+    dysgu call $ref_fa wd_${sam} $bam \\
+        -p ${task.cpus} \\
+        --clean \\
+        --mq ${params.min_mapq} \\
+        --symbolic-sv-size 100 \\
         | bgzip > ${out_vcf}
     """
 }

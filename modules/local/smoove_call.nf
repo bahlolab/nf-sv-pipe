@@ -1,31 +1,31 @@
 
 process SMOOVE_CALL {
     label 'smoove'
-    label 'C2M16T8'
-    tag { sam }
-    storeDir params.cachedir ? "${params.cachedir}/SMOOVE_CALL" : null
+    tag { fam }
+    cpus   { [2, (bams instanceof List ? bams : [bams]).size() * 2].max() }
+    memory { [8.GB, (bams instanceof List ? bams : [bams]).size() * 8.GB].max() }
+    time   { 8.h * task.attempt }
+    maxRetries 2
+    errorStrategy { task.attempt <= 2 ? 'retry' : 'finish' }
 
     input:
-    tuple val(sam), path(bam), path(bai)
-    tuple path(ref_fa), path(ref_fai)
-    path(exclude)
+    tuple val(fam), path(bams), path(bais)
+    tuple path(ref_fa), path(ref_idx)
+    path exclude
 
     output:
-    tuple val(sam), path(out_vcf), path("${out_vcf}.csi")
+    tuple val(fam), path(out_vcf), path("${out_vcf}.csi")
 
     script:
-    smoove_vcf = "${sam}-smoove.genotyped.vcf.gz"
-    out_vcf    = "${sam}.SMOOVE.vcf.gz"
+    out_vcf  = "${fam}-smoove.genotyped.vcf.gz"
+    bam_list = (bams instanceof List ? bams : [bams]).join(' ')
     """
-    smoove call $bam \\
-        --processes $task.cpus \\
-        --outdir . \\
-        --exclude $exclude \\
-        --name $sam \\
-        --fasta $ref_fa \\
-        --genotype
-        
-    mv $smoove_vcf $out_vcf
-    mv ${smoove_vcf}.csi ${out_vcf}.csi
+    smoove call -x \\
+        --name ${fam} \\
+        --exclude ${exclude} \\
+        --fasta ${ref_fa} \\
+        --processes ${task.cpus} \\
+        --genotype \\
+        ${bam_list}
     """
 }

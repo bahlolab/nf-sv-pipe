@@ -1,12 +1,12 @@
 
 process DUPHOLD {
     label 'smoove'
-    label 'C4M8T8'
+    label 'C2M8T8'
     tag "$sam"
 
     input:
     tuple val(sam), path(bcf), path(csi), path(bam), path(bai)
-    tuple path(ref_fa), path(ref_fai)
+    tuple path(ref_fa), path(ref_idx)
 
     output:
     tuple val(sam), path(out_bcf), path("${out_bcf}.csi")
