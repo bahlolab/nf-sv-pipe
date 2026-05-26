@@ -1,10 +1,10 @@
 # nf-sv-plex
 
-Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://github.com/Illumina/manta), [DYSGU](https://github.com/kcleal/dysgu), [SMOOVE](https://github.com/brentp/smoove), [DELLY](https://github.com/dellytools/delly), DELLY_CNV, [CNVNATOR](https://github.com/abyzovlab/CNVnator)) with cross-caller merging via matcha and/or [truvari](https://github.com/acenglish/truvari) (toggle either branch with `params.matcha` / `params.truvari`).
+Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://github.com/Illumina/manta), [DYSGU](https://github.com/kcleal/dysgu), [SMOOVE](https://github.com/brentp/smoove), [DELLY](https://github.com/dellytools/delly), DELLY_CNV, [CNVNATOR](https://github.com/abyzovlab/CNVnator)) with cross-caller merging via [matcha](https://github.com/jemunro/matcha) and/or [truvari](https://github.com/acenglish/truvari) (toggle either branch with `params.matcha` / `params.truvari`).
 
 ## Prerequisites
 
-* `matcha` binary must be placed at `bin/matcha` in the pipeline directory before running. It is not distributed with this repo.
+* [`matcha`](https://github.com/jemunro/matcha) binary must be placed at `bin/matcha` in the pipeline directory before running. It is not distributed with this repo.
 * See [bahlolab/nextflow-config](https://github.com/bahlolab/nextflow-config) for generic Nextflow configuration for Milton/SLURM.
 
 ## Usage
@@ -44,20 +44,32 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `bams` | Path to a TSV with sample ID in column 1 and path to indexed BAM/CRAM in column 2 (no header) |
 | `ref_fasta` | Reference genome FASTA (must be indexed) |
 | `assembly` | Genome build: `'hg38'` (default) or `'hg19'` |
+| `outdir` | Output directory (default: `'output'`) |
 | `callers` | List of callers to run; supported values: [`MANTA`](https://github.com/Illumina/manta), [`DYSGU`](https://github.com/kcleal/dysgu), [`SMOOVE`](https://github.com/brentp/smoove), [`DELLY`](https://github.com/dellytools/delly), `DELLY_CNV` (DELLY in CNV mode), [`CNVNATOR`](https://github.com/abyzovlab/CNVnator). Order sets merge priority. |
 | `apply_filters` | Callers whose BCFs are PASS-filtered before merging (default: `['DYSGU', 'DELLY']`) |
 | `familial` | Group samples by family for joint calling where supported (default: `true`) |
-| `chr_prefix` | Chromosome name prefix; `null` = auto-detect (`'chr'` for hg38, `''` for hg19) |
 | `chrs` | Chromosomes to process; `null` = no restriction, `'auto'` = autosomes + X/Y (default), or a list of names |
+| `matcha` | Run the MATCHA merge branch (default: `true`) |
+| `truvari` | Run the TRUVARI merge branch (default: `true`) |
+| `duphold` | Run duphold between per-sample collapse and cohort merge to filter low-quality DEL/DUP calls (default: `true`) |
+
+<details>
+<summary>Advanced parameters</summary>
+
+| Param | Description |
+|---|---|
+| `chr_prefix` | Chromosome name prefix; `null` = auto-detect (`'chr'` for hg38, `''` for hg19) |
 | `copy_bams` | Copy BAMs to work directory before calling — use when input is on slow or remote storage (default: `false`) |
 | `refdir` | Directory for downloaded reference files (mappability, exclude lists); default: `'reference_files'` |
 | `cachedir` | `storeDir` path for cacheable call outputs; `null` = always re-run (default) |
+| `min_mapq` | Minimum mapping quality for reads (default: `15`) |
 | `cnvnator_bin_size` | CNVnator bin size in bp (default: `1000`) |
-| `matcha` | Run the MATCHA merge branch (default: `true`) |
+| `duphold_min_size` | Minimum DEL/DUP size in bp for duphold annotation; smaller variants bypass duphold (default: `1000`) |
+| `duphold_del_dhffc` | Exclude DELs where `FMT/DHFFC[0]` exceeds this threshold (default: `0.75`) |
+| `duphold_dup_dhbfc` | Exclude DUPs where `FMT/DHBFC[0]` is below this threshold (default: `1.25`) |
 | `matcha_min_jaccard` | Minimum Jaccard similarity for matcha collapse/merge (default: `0.75`) |
 | `matcha_sample_filter` | bcftools filter expression applied after per-sample matcha collapse; default keeps PASS or multi-caller calls |
 | `matcha_cohort_filter` | bcftools filter expression applied after matcha cohort merge; default keeps multi-caller calls |
-| `truvari` | Run the TRUVARI merge branch (default: `true`) |
 | `truvari_itvl_refdist` | DEL/DUP/INV collapse `--refdist` — max bp distance between breakpoints (default: `10000`) |
 | `truvari_itvl_pctovl` | DEL/DUP/INV collapse `--pctovl` — min reciprocal overlap fraction (default: `0.75`) |
 | `truvari_bnd_refdist` | BND/INS collapse `--refdist` — max bp distance between breakpoints (default: `50`) |
@@ -65,6 +77,8 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `truvari_bnd_pctsize` | BND/INS collapse `--pctsize` — min size similarity fraction (default: `0.75`) |
 | `truvari_sample_filter` | bcftools filter expression applied after per-sample truvari collapse; default keeps PASS or consolidated calls |
 | `truvari_cohort_filter` | bcftools filter expression applied after truvari cohort merge (default: `null` — no filter) |
+
+</details>
 
 ## Output
 
@@ -83,6 +97,7 @@ Outputs are written to `params.outdir` (default: `output/`) in the run directory
 * Callers listed in `apply_filters` (default: DYSGU, DELLY) have their per-sample BCFs PASS-filtered before merging.
 * The PASS-filtered caller channel feeds **both** the MATCHA and TRUVARI branches; each branch runs independently and can be disabled with `params.matcha = false` or `params.truvari = false`.
 * **MATCHA per-sample collapse**: `matcha collapse` merges calls from all callers per sample. Caller priority follows `params.callers` order — the first caller's record is kept when calls are collapsed.
-* **MATCHA cohort merge**: `matcha merge` pools all per-sample collapsed BCFs into a single cohort BCF.
 * **TRUVARI per-sample collapse**: FORMAT fields are stripped to GT-only per caller, then `bcftools merge -m id --force-samples` creates a multi-column VCF (one column per caller). Variants are split into DEL/DUP/INV (interval-overlap matching) and BND/INS (breakpoint-proximity matching) subsets; `truvari collapse --intra --chain` runs on each with type-specific params, and results are concatenated and sorted. `--intra` consolidates the per-caller columns into a single sample column with a `FORMAT/SUPP` support field.
+* **DUPHOLD** (when `params.duphold = true`): After per-sample collapse, duphold annotates DEL/DUP variants ≥ `params.duphold_min_size` with depth-fold-change fields (`FMT/DHFFC`, `FMT/DHBFC`). DELs with `DHFFC > params.duphold_del_dhffc` and DUPs with `DHBFC < params.duphold_dup_dhbfc` are dropped. Smaller variants and non-DEL/DUP SVTYPE values bypass duphold and are merged back before the cohort step. Applies to both MATCHA and TRUVARI branches.
+* **MATCHA cohort merge**: `matcha merge` pools all per-sample collapsed BCFs into a single cohort BCF.
 * **TRUVARI cohort merge**: `bcftools merge -m id` pools per-sample collapsed BCFs into a multi-sample VCF, then the same DEL/DUP/INV / BND/INS split-collapse approach runs without `--intra`.

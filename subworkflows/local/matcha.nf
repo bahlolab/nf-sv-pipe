@@ -33,9 +33,13 @@ workflow MATCHA {
         }
 
         merge_input = to_merge
-            .map { _sm, bcf, csi -> ['x', bcf, csi ] }
+            .map { sm, bcf, csi -> [true, sm, bcf, csi ] }
             .groupTuple(by: 0)
-            .map { _sm, bcf, csi -> [bcf, csi] }
+            .map { _key, sms, bcfs, csis ->
+                def sorted = [sms, bcfs, csis].transpose().sort { a, b -> a[0] <=> b[0] }
+                def s = sorted.transpose()
+                [s[1], s[2]]
+            }
             .combine(chrs_ch.map { it ?: [null] }.flatten() )
 
 
@@ -43,11 +47,8 @@ workflow MATCHA {
 
         // Collect per-chr outputs, sort by original chrs_ch order, then concat
         sorted_concat_ch = MERGE.out   // [chr, bcf, csi]
-            .collect()
-            .map { items ->
-                def ordered = items.sort { a, b -> a[0] <=> b[0] }
-                [ordered.collect { it[1] }, ordered.collect { it[2] }]
-            }
+            .toSortedList { a, b -> a[0] <=> b[0] }
+            .map { items -> [items.collect { it[1] }, items.collect { it[2] }] }
 
         concat_split = sorted_concat_ch.multiMap { bcfs, csis ->
             bcfs: bcfs

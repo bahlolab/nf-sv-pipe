@@ -22,6 +22,7 @@ process MATCHA_MERGE {
         --min-jaccard ${params.matcha_min_jaccard} \\
         --threads ${task.cpus} \\
         --missing-to-ref \\
+        --write-index \\
         ${chr_arg} \\
         ${chr_set_arg} \\
         -o ${out_bcf} \\
