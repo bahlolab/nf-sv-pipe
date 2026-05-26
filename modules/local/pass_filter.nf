@@ -2,7 +2,7 @@
 process PASS_FILTER {
     label 'bcftools'
     label 'C2M2T2'
-    tag { "${caller}.${sam}" }
+    tag { "${caller}:${sam}" }
 
     input:
     tuple val(caller), val(sam), path(bcf), path(csi)

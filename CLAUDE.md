@@ -12,7 +12,7 @@ Nextflow SV-calling pipeline. Entry: `main.nf` → workflow `SVPLEX` in [workflo
 
 Callers (MANTA, DYSGU, SMOOVE, CNVNATOR, DELLY, DELLY_CNV) each live in [subworkflows/local/](subworkflows/local/) and emit per-sample BCFs. Both merge branches consume the same post-`PASS_FILTER` channel and can be toggled independently via `params.matcha` / `params.truvari` (both default `true`). Merge logic is in [subworkflows/local/matcha.nf](subworkflows/local/matcha.nf) and [subworkflows/local/truvari.nf](subworkflows/local/truvari.nf).
 
-When `params.matcha_duphold` / `params.truvari_duphold` is true (both default `true`), a [DUPHOLD](modules/local/duphold.nf) step runs between collapse and merge. It restricts duphold annotation to DEL/DUP variants ≥ `params.duphold_min_size` (1 kb), then drops DELs with `FMT/DHFFC[0] > params.duphold_del_dhffc` (0.75) and DUPs with `FMT/DHBFC[0] < params.duphold_dup_dhbfc` (1.25). Smaller variants and other SVTYPE values bypass duphold entirely and are merged back before the cohort step. The `duphold` container label needs a combined bcftools+duphold image (see `nextflow.config`).
+When `params.duphold` is true (default `true`), a [DUPHOLD](modules/local/duphold.nf) step runs between collapse and merge (applies to both branches). It restricts duphold annotation to DEL/DUP variants ≥ `params.duphold_min_size` (1 kb), then drops DELs with `FMT/DHFFC[0] > params.duphold_del_dhffc` (0.75) and DUPs with `FMT/DHBFC[0] < params.duphold_dup_dhbfc` (1.25). Smaller variants and other SVTYPE values bypass duphold entirely and are merged back before the cohort step. The `duphold` container label needs a combined bcftools+duphold image (see `nextflow.config`).
 
 ## Channel conventions
 

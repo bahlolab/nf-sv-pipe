@@ -23,8 +23,8 @@ workflow TRUVARI {
         COLLAPSE(per_sample)
 
         to_merge = COLLAPSE.out
-        if (params.truvari_duphold) {
-            DUPHOLD(COLLAPSE.out.join(bam_ch), ref_ch)
+        if (params.duphold) {
+            DUPHOLD(COLLAPSE.out.combine(bam_ch, by:0), ref_ch)
             to_merge = DUPHOLD.out
         }
 

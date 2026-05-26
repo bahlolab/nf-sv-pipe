@@ -40,7 +40,7 @@ workflow MANTA {
         FIX_VCF(CALL.out)
 
         fix_tagged = FIX_VCF.out
-            .join(id_is_singleton)
+            .combine(id_is_singleton, by: 0)
             .branch {
                 singleton: it[3] == true
                 multi:     true

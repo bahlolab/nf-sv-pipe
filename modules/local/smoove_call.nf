@@ -7,6 +7,8 @@ process SMOOVE_CALL {
     time   { 8.h * task.attempt }
     maxRetries 2
     errorStrategy { task.attempt <= 2 ? 'retry' : 'finish' }
+    storeDir params.cachedir ? "${params.cachedir}/SMOOVE_CALL" : null
+
 
     input:
     tuple val(fam), path(bams), path(bais)
@@ -14,10 +16,11 @@ process SMOOVE_CALL {
     path exclude
 
     output:
-    tuple val(fam), path(out_vcf), path("${out_vcf}.csi")
+    tuple val(fam), path(out_final), path("${out_final}.csi")
 
     script:
-    out_vcf  = "${fam}-smoove.genotyped.vcf.gz"
+    out_tmp   = "${fam}-smoove.genotyped.vcf.gz"
+    out_final = "${fam}.SMOOVE.vcf.gz"
     bam_list = (bams instanceof List ? bams : [bams]).join(' ')
     """
     smoove call -x \\
@@ -27,5 +30,8 @@ process SMOOVE_CALL {
         --processes ${task.cpus} \\
         --genotype \\
         ${bam_list}
+    
+    mv $out_tmp $out_final
+    mv ${out_tmp}.csi ${out_final}.csi
     """
 }

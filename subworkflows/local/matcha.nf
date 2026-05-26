@@ -1,6 +1,7 @@
 
 include { MATCHA_COLLAPSE as COLLAPSE } from '../../modules/local/matcha_collapse'
 include { MATCHA_MERGE    as MERGE    } from '../../modules/local/matcha_merge'
+include { BCFTOOLS_CONCAT as CONCAT   } from '../../modules/local/bcftools_concat'
 include { DUPHOLD                     } from '../../modules/local/duphold'
 
 workflow MATCHA {
@@ -26,17 +27,35 @@ workflow MATCHA {
         COLLAPSE(per_sample, chrs_str_ch)
 
         to_merge = COLLAPSE.out
-        if (params.matcha_duphold) {
-            DUPHOLD(COLLAPSE.out.join(bam_ch), ref_ch)
+        if (params.duphold) {
+            DUPHOLD(COLLAPSE.out.combine(bam_ch, by:0), ref_ch)
             to_merge = DUPHOLD.out
         }
 
-        MERGE(
-            to_merge.map { _sam, bcf, _csi -> bcf }.collect(),
-            to_merge.map { _sam, _bcf, csi -> csi }.collect()
-        )
+        merge_input = to_merge
+            .map { _sm, bcf, csi -> ['x', bcf, csi ] }
+            .groupTuple(by: 0)
+            .map { _sm, bcf, csi -> [bcf, csi] }
+            .combine(chrs_ch.map { it ?: [null] }.flatten() )
+
+
+        MERGE(merge_input,  chrs_str_ch)
+
+        // Collect per-chr outputs, sort by original chrs_ch order, then concat
+        sorted_concat_ch = MERGE.out   // [chr, bcf, csi]
+            .collect()
+            .map { items ->
+                def ordered = items.sort { a, b -> a[0] <=> b[0] }
+                [ordered.collect { it[1] }, ordered.collect { it[2] }]
+            }
+
+        concat_split = sorted_concat_ch.multiMap { bcfs, csis ->
+            bcfs: bcfs
+            csis: csis
+        }
+        CONCAT(concat_split.bcfs, concat_split.csis)
 
     emit:
-        collapsed = COLLAPSE.out   // [sam, bcf, csi]
-        merged    = MERGE.out      // [cohort.bcf, cohort.bcf.csi]
+        collapsed = COLLAPSE.out        // [sam, bcf, csi]
+        merged    = CONCAT.out // [cohort.bcf, cohort.bcf.csi]
 }

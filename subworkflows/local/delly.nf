@@ -15,7 +15,7 @@ workflow DELLY {
         CALL(sam_bam_ch, ref_ch, excl_ch)
 
         call_with_fam = CALL.out
-            .join(fam_bam_ch.map { fam, sam, _bam, _bai -> [sam, fam] })
+            .combine(fam_bam_ch.map { fam, sam, _bam, _bai -> [sam, fam] }, by: 0)
             .map { sam, bcf, csi, fam -> [fam, sam, bcf, csi] }
 
         fam_calls = call_with_fam.groupTuple(by: 0)

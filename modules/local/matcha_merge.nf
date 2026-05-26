@@ -1,25 +1,29 @@
 
 process MATCHA_MERGE {
     label 'bcftools'
-    label 'C16M32T4'
-    publishDir "$params.outdir"
+    label 'C4M16T4'
+    tag   "${chr ?: 'all'}"
 
     input:
-    path(bcfs)
-    path(csis)
+    tuple path(bcfs), path(csis), val(chr)
+    val(chr_set)
 
     output:
-    tuple path(out_bcf), path("${out_bcf}.csi")
+    tuple val(chr), path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_bcf = "${params.id}.cohort.bcf"
+    out_bcf = chr ? "${params.id}.${chr}.cohort.bcf" : "${params.id}.cohort.bcf"
+    def chr_arg     = chr     ? "--chrs ${chr}"        : ""
+    def chr_set_arg = chr_set ? "--chr-set ${chr_set}" : ""
     """
     export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/lib
 
     matcha merge \\
         --min-jaccard ${params.matcha_min_jaccard} \\
         --threads ${task.cpus} \\
-        --use-shm \\
+        --missing-to-ref \\
+        ${chr_arg} \\
+        ${chr_set_arg} \\
         -o ${out_bcf} \\
         ${bcfs.join(' ')}
     """

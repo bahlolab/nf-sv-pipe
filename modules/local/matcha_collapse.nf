@@ -27,7 +27,6 @@ process MATCHA_COLLAPSE {
         ${chrs_arg} \\
         --min-jaccard ${params.matcha_min_jaccard} \\
         --threads ${task.cpus} \\
-        --use-shm \\
         -o unfiltered.bcf
 
     ${filter_cmd}
