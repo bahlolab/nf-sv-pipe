@@ -24,7 +24,12 @@ workflow TRUVARI {
 
         to_merge = COLLAPSE.out
         if (params.duphold) {
-            DUPHOLD(COLLAPSE.out.combine(bam_ch, by:0), ref_ch)
+            DUPHOLD(
+                COLLAPSE.out
+                    .combine(bam_ch, by: 0)
+                    .map { sam, bcf, csi, bam, bai -> ['TRUVARI', sam, bcf, csi, bam, bai] },
+                ref_ch
+            )
             to_merge = DUPHOLD.out
         }
 

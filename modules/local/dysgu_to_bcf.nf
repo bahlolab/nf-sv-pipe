@@ -11,7 +11,7 @@ process DYSGU_TO_BCF {
     tuple val(sam), path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_bcf = "${sam}.dysgu.bcf"
+    out_bcf = "${sam}.DYSGU.bcf"
     """
     bcftools view ${vcf} --threads ${task.cpus} -Ob -o ${out_bcf} 
     bcftools index ${out_bcf} --threads ${task.cpus} 

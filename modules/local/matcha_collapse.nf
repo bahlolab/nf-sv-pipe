@@ -3,7 +3,7 @@ process MATCHA_COLLAPSE {
     label 'matcha'
     label 'C2M4T4'
     tag "$sam"
-    publishDir "$params.outdir/collapse"
+    publishDir "$params.outdir/MATCHA", mode: 'copy'
 
     input:
     tuple val(sam), val(callers), path(bcfs), path(csis)
@@ -13,7 +13,7 @@ process MATCHA_COLLAPSE {
     tuple val(sam), path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_bcf = "${sam}.collapsed.bcf"
+    out_bcf = "${sam}.MATCHA.bcf"
     def inputs = [callers, bcfs].transpose().collect { caller, bcf -> "${caller}:${bcf}" }.join(' ')
     def chrs_arg = chrs?.trim() ? "--chrs ${chrs}" : ""
     def filter_cmd = params.matcha_sample_filter \

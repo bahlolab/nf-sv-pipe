@@ -14,7 +14,7 @@ process DELLY_CALL {
     tuple val(sam), path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_bcf = "${sam}.delly.bcf"
+    out_bcf = "${sam}.DELLY.bcf"
     """
     delly call -h ${task.cpus} -q ${params.min_mapq} -g $ref_fa -x $excl -o $out_bcf $bam
     """

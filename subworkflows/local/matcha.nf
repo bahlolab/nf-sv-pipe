@@ -28,7 +28,12 @@ workflow MATCHA {
 
         to_merge = COLLAPSE.out
         if (params.duphold) {
-            DUPHOLD(COLLAPSE.out.combine(bam_ch, by:0), ref_ch)
+            DUPHOLD(
+                COLLAPSE.out
+                    .combine(bam_ch, by: 0)
+                    .map { sam, bcf, csi, bam, bai -> ['MATCHA', sam, bcf, csi, bam, bai] },
+                ref_ch
+            )
             to_merge = DUPHOLD.out
         }
 
@@ -54,7 +59,7 @@ workflow MATCHA {
             bcfs: bcfs
             csis: csis
         }
-        CONCAT(concat_split.bcfs, concat_split.csis, 'matcha')
+        CONCAT(concat_split.bcfs, concat_split.csis, 'MATCHA')
 
     emit:
         collapsed = COLLAPSE.out        // [sam, bcf, csi]

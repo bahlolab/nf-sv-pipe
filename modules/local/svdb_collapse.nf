@@ -3,7 +3,7 @@ process SVDB_COLLAPSE {
     label 'bcftools_svdb'
     label 'C2M4T4'
     tag "$sam"
-    publishDir "$params.outdir/svdb_collapse"
+    publishDir "$params.outdir/SVDB"
 
     input:
     tuple val(sam), val(callers), path(bcfs), path(csis)
@@ -12,7 +12,7 @@ process SVDB_COLLAPSE {
     tuple val(sam), path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_bcf = "${sam}.svdb.collapsed.bcf"
+    out_bcf = "${sam}.SVDB.bcf"
     def priority = callers.join(',')
     def vcf_pairs = [callers, bcfs.collect { it.name.replaceAll(/\.bcf$/, '.vcf.gz') }]
         .transpose()

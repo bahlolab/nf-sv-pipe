@@ -9,6 +9,7 @@ include { FETCH_REFERENCE_FILES } from '../modules/local/fetch_reference_files'
 include { MAKE_CALL_REGIONS     } from '../modules/local/make_call_regions'
 include { COPY_BAMS             } from '../modules/local/copy_bams'
 include { PASS_FILTER           } from '../modules/local/pass_filter'
+include { PUBLISH               } from '../modules/local/publish_caller_vcfs'
 include { MATCHA                } from '../subworkflows/local/matcha'
 include { TRUVARI               } from '../subworkflows/local/truvari'
 include { SVDB                  } from '../subworkflows/local/svdb'
@@ -41,6 +42,8 @@ workflow SVPLEX {
         if (params.callers.contains('DELLY'))     { vcfs = vcfs.mix(DELLY(ref_ch, fam_bam_ch, FETCH_REFERENCE_FILES.out.delly_excl).vcfs) }
         if (params.callers.contains('DELLY_CNV')) { vcfs = vcfs.mix(DELLY_CNV(ref_ch, fam_bam_ch, FETCH_REFERENCE_FILES.out.delly_map).vcfs) }
         if (params.callers.contains('DYSGU'))     { vcfs = vcfs.mix(DYSGU(ref_ch, fam_bam_ch).vcfs) }
+
+        if (params.caller_vcf_dir) { PUBLISH(vcfs) }
 
         branched = vcfs.branch { caller, sam, bcf, csi ->
             filter:    params.apply_filters.contains(caller)

@@ -11,7 +11,7 @@ process DELLY_CNV_NORM {
     tuple val(sam), path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_bcf = "${sam}.delly_cnv_norm.bcf"
+    out_bcf = "${sam}.DELLY_CNV.bcf"
     def max_dels = params.delly_cnv_max_dels
     def max_dups = params.delly_cnv_max_dups
     def del_cap = max_dels ?

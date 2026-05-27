@@ -11,7 +11,7 @@ process SVDB_MERGE {
     tuple val(chr), path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_bcf = chr ? "${params.id}.${chr}.svdb.cohort.bcf" : "${params.id}.svdb.cohort.bcf"
+    out_bcf = chr ? "${params.id}.${chr}.SVDB.merge.bcf" : "${params.id}.SVDB.merge.bcf"
     def region_arg = chr ? "-r ${chr}" : ""
     def filter_cmd = params.svdb_cohort_filter
         ? "bcftools view --threads ${task.cpus} -i '${params.svdb_cohort_filter}' -Ob -o ${out_bcf} merged.bcf"

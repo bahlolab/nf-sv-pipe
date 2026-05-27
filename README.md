@@ -44,6 +44,7 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `ref_fasta` | Reference genome FASTA (must be indexed) |
 | `assembly` | Genome build: `'hg38'` (default) or `'hg19'` |
 | `outdir` | Output directory (default: `'output'`) |
+| `caller_vcf_dir` | If set, per-sample per-caller BCFs are copied here under `<caller_vcf_dir>/<CALLER>/` for each active caller (default: `null` — disabled) |
 | `callers` | List of callers to run; supported values: [`MANTA`](https://github.com/Illumina/manta), [`DYSGU`](https://github.com/kcleal/dysgu), [`SMOOVE`](https://github.com/brentp/smoove), [`DELLY`](https://github.com/dellytools/delly), `DELLY_CNV` (DELLY in CNV mode), [`CNVNATOR`](https://github.com/abyzovlab/CNVnator). Order sets merge priority. |
 | `apply_filters` | Callers whose BCFs are PASS-filtered before merging (default: `['DYSGU', 'DELLY']`) |
 | `familial` | Group samples by family for joint calling where supported (default: `true`) |
@@ -63,7 +64,7 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `chr_prefix` | Chromosome name prefix; `null` = auto-detect (`'chr'` for hg38, `''` for hg19) |
 | `copy_bams` | Copy BAMs to work directory before calling — use when input is on slow or remote storage (default: `false`) |
 | `refdir` | Directory for downloaded reference files (mappability, exclude lists); default: `'reference_files'` |
-| `cachedir` | `storeDir` path for cacheable call outputs; `null` = always re-run (default) |
+| `cachedir` | `storeDir` path for long-term caching of caller call outputs, collapse, duphold, and merge steps; `null` = always re-run (default). Set to a path outside the Nextflow work directory so cached outputs survive work-dir cleans. |
 | `min_mapq` | Minimum mapping quality for reads (default: `15`) |
 | `delly_cnv_max_dels` | If set, cap DELLY_CNV DEL callsets to top N by QUAL after CNV-normalisation (default: `2000`) |
 | `delly_cnv_max_dups` | If set, cap DELLY_CNV DUP callsets to top N by QUAL after CNV-normalisation (default: `1000`) |
@@ -92,16 +93,25 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 
 ## Output
 
-Outputs are written to `params.outdir` (default: `output/`) in the run directory:
+### Merged cohort BCFs (in `params.outdir`)
 
 | File | Description |
 |---|---|
-| `collapse/<sample>.collapsed.bcf` (+ `.csi`) | Per-sample BCF with calls from all callers collapsed by matcha (only if `params.matcha`) |
-| `<id>.cohort.bcf` (+ `.csi`) | Cohort-level BCF with per-sample matcha-collapsed calls merged across samples (only if `params.matcha`) |
-| `truvari_collapse/<sample>.truvari.collapsed.bcf` (+ `.csi`) | Per-sample BCF with calls from all callers collapsed by truvari (only if `params.truvari`) |
-| `<id>.truvari.cohort.bcf` (+ `.csi`) | Cohort-level BCF with per-sample truvari-collapsed calls merged across samples (only if `params.truvari`) |
-| `svdb_collapse/<sample>.svdb.collapsed.bcf` (+ `.csi`) | Per-sample BCF with calls from all callers collapsed by SVDB (only if `params.svdb`) |
-| `<id>.svdb.cohort.bcf` (+ `.csi`) | Cohort-level BCF with per-sample SVDB-collapsed calls merged across samples (only if `params.svdb`) |
+| `<id>.MATCHA.cohort.bcf` (+ `.csi`) | Cohort-level BCF with per-sample matcha-collapsed calls merged across samples (only if `params.matcha`) |
+| `<id>.TRUVARI.cohort.bcf` (+ `.csi`) | Cohort-level BCF with per-sample truvari-collapsed calls merged across samples (only if `params.truvari`) |
+| `<id>.SVDB.cohort.bcf` (+ `.csi`) | Cohort-level BCF with per-sample SVDB-collapsed calls merged across samples (only if `params.svdb`) |
+
+### Per-sample collapsed BCFs (in `params.outdir`)
+
+| File | Description |
+|---|---|
+| `MATCHA/<sample>.MATCHA.bcf` (+ `.csi`) | Per-sample BCF with calls from all callers collapsed by matcha (only if `params.matcha`) |
+| `TRUVARI/<sample>.TRUVARI.bcf` (+ `.csi`) | Per-sample BCF with calls from all callers collapsed by truvari (only if `params.truvari`) |
+| `SVDB/<sample>.SVDB.bcf` (+ `.csi`) | Per-sample BCF with calls from all callers collapsed by SVDB (only if `params.svdb`) |
+
+### Per-caller per-sample BCFs (in `params.caller_vcf_dir`, if set)
+
+When `caller_vcf_dir` is set, the raw per-sample BCF from each caller is copied to `<caller_vcf_dir>/<CALLER>/` before any merging or filtering. Filename convention: `<sample>.<CALLER>.bcf` (+ `.csi`). For DELLY samples in multi-member families the file is `<sample>.DELLY.geno.bcf` (genotyped against a joint site list).
 
 ## Implementation
 

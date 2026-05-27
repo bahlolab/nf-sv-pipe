@@ -3,7 +3,7 @@ process TRUVARI_COLLAPSE {
     label 'bcftools_truvari'
     label 'C2M4T4'
     tag "$sam"
-    publishDir "$params.outdir/truvari_collapse"
+    publishDir "$params.outdir/TRUVARI", mode: 'copy'
 
     input:
     tuple val(sam), val(callers), path(bcfs), path(csis)
@@ -12,7 +12,7 @@ process TRUVARI_COLLAPSE {
     tuple val(sam), path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_bcf = "${sam}.truvari.collapsed.bcf"
+    out_bcf = "${sam}.TRUVARI.bcf"
     def filter_cmd = params.truvari_sample_filter \
         ? "bcftools view --threads ${task.cpus} -i '${params.truvari_sample_filter}' -Ob -o ${out_bcf} collapsed.bcf" \
         : "mv collapsed.bcf ${out_bcf}"

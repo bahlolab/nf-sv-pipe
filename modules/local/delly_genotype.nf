@@ -13,7 +13,7 @@ process DELLY_GENOTYPE {
     tuple val(sam), path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_bcf = "${sam}.delly_geno.bcf"
+    out_bcf = "${sam}.DELLY.geno.bcf"
     """
     delly call -h ${task.cpus} -g $ref_fa -x $excl -v $sites_bcf -o $out_bcf $bam
     """

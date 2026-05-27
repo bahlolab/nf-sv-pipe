@@ -5,14 +5,14 @@ process DUPHOLD {
     tag "$sam"
 
     input:
-    tuple val(sam), path(bcf), path(csi), path(bam), path(bai)
+    tuple val(branch), val(sam), path(bcf), path(csi), path(bam), path(bai)
     tuple path(ref_fa), path(ref_idx)
 
     output:
     tuple val(sam), path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_bcf = "${sam}.duphold.bcf"
+    out_bcf = "${sam}.${branch}.duphold.bcf"
     def large_expr = '(INFO/SVTYPE="DEL" || INFO/SVTYPE="DUP") && (INFO/SVLEN >= ' + params.duphold_min_size + ' || INFO/SVLEN <= -' + params.duphold_min_size + ')'
     def del_cap = params.duphold_max_dels ?
         """

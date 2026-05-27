@@ -12,7 +12,7 @@ process MATCHA_MERGE {
     tuple val(chr), path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_bcf = chr ? "${params.id}.${chr}.cohort.bcf" : "${params.id}.cohort.bcf"
+    out_bcf = chr ? "${params.id}.${chr}.MATCHA.merge.bcf" : "${params.id}.MATCHA.merge.bcf"
     def chr_arg     = chr     ? "--chrs ${chr}"        : ""
     def chr_set_arg = chr_set ? "--chr-set ${chr_set}" : ""
     def filter_cmd  = params.matcha_cohort_filter
