@@ -26,7 +26,7 @@ When `params.duphold` is true (default `true`), a [DUPHOLD](modules/local/duphol
 
 ## Tooling
 
-- `matcha` binary is expected at `bin/matcha` but is **not committed to git** — it must be obtained/built separately. Its modules use `container null` and invoke it via `bin/` (Nextflow adds `bin/` to PATH automatically for processes in this repo).
+- MATCHA modules use `label 'matcha'` — a combined matcha+bcftools container (`ghcr.io/jemunro/matcha/matcha-bcftools`, see `nextflow.config`). No separate binary is needed.
 - TRUVARI modules use the `bcftools_truvari` label (a Seqera-built combined container with both tools). Per-sample collapse ([modules/local/truvari_collapse.nf](modules/local/truvari_collapse.nf)): strips all FORMAT fields except GT (`bcftools annotate -x '^FORMAT/GT'`) per-caller to avoid merge conflicts, then `bcftools merge -m id --force-samples` (same sample name across callers requires `--force-samples`; `-m id` is safe for symbolic alleles), splits into DEL/DUP/INV and BND/INS subsets, runs `truvari collapse --intra --chain` on each with type-specific params, then `bcftools concat | bcftools sort`. Cohort merge ([modules/local/truvari_merge.nf](modules/local/truvari_merge.nf)) follows the same split/typed-collapse pattern (without `--intra`) on the multi-sample merged VCF. The standalone `truvari` container label is also present but currently unused.
 - DUPHOLD uses `label 'smoove'` — the smoove container bundles both `duphold` and `bcftools`.
 - The `octopusv` and `jasminesv` container labels in [nextflow.config](nextflow.config) are dormant — no module currently references them. Same for the `jasmine_max_dist` param.

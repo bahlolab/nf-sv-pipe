@@ -16,7 +16,7 @@ process DUPHOLD {
     def large_expr = '(INFO/SVTYPE="DEL" || INFO/SVTYPE="DUP") && (INFO/SVLEN >= ' + params.duphold_min_size + ' || INFO/SVLEN <= -' + params.duphold_min_size + ')'
     def del_cap = params.duphold_max_dels ?
         """
-        del_thr=\$(bcftools query -i 'INFO/SVTYPE=="DEL"' -f '[%DHFFC]' large_dh.bcf | sort -g | sed -n '${params.duphold_max_dels}p')
+        del_thr=\$(bcftools query -i 'INFO/SVTYPE=="DEL"' -f '[%DHFFC\\n]' large_dh.bcf | sort -g | sed -n '${params.duphold_max_dels}p')
         if [ -n "\$del_thr" ]; then
             del_thr=\$(awk -v a="\$del_thr" -v b="${params.duphold_del_dhffc}" 'BEGIN{print (a<b)?a:b}')
         else
@@ -25,7 +25,7 @@ process DUPHOLD {
         """ : "del_thr=${params.duphold_del_dhffc}"
     def dup_cap = params.duphold_max_dups ?
         """
-        dup_thr=\$(bcftools query -i 'INFO/SVTYPE=="DUP"' -f '[%DHBFC]' large_dh.bcf | sort -gr | sed -n '${params.duphold_max_dups}p')
+        dup_thr=\$(bcftools query -i 'INFO/SVTYPE=="DUP"' -f '[%DHBFC\\n]' large_dh.bcf | sort -gr | sed -n '${params.duphold_max_dups}p')
         if [ -n "\$dup_thr" ]; then
             dup_thr=\$(awk -v a="\$dup_thr" -v b="${params.duphold_dup_dhbfc}" 'BEGIN{print (a>b)?a:b}')
         else

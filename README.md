@@ -4,7 +4,6 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 
 ## Prerequisites
 
-* [`matcha`](https://github.com/jemunro/matcha) binary must be placed at `bin/matcha` in the pipeline directory before running. It is not distributed with this repo.
 * See [bahlolab/nextflow-config](https://github.com/bahlolab/nextflow-config) for generic Nextflow configuration for Milton/SLURM.
 
 ## Usage

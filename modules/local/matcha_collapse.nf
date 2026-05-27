@@ -1,6 +1,6 @@
 
 process MATCHA_COLLAPSE {
-    label 'bcftools'
+    label 'matcha'
     label 'C2M4T4'
     tag "$sam"
     publishDir "$params.outdir/collapse"
@@ -20,8 +20,6 @@ process MATCHA_COLLAPSE {
         ? "bcftools view --threads ${task.cpus} -i '${params.matcha_sample_filter}' -Ob -o ${out_bcf} unfiltered.bcf" \
         : "mv unfiltered.bcf ${out_bcf}"
     """
-    export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/lib
-
     matcha collapse \\
         ${inputs} \\
         ${chrs_arg} \\

@@ -1,6 +1,6 @@
 
 process MATCHA_MERGE {
-    label 'bcftools'
+    label 'matcha'
     label 'C4M16T4'
     tag   "${chr ?: 'all'}"
 
@@ -19,8 +19,6 @@ process MATCHA_MERGE {
         ? "bcftools view --threads ${task.cpus} -i '${params.matcha_cohort_filter}' -Ob -o ${out_bcf} merged.bcf"
         : "mv merged.bcf ${out_bcf}"
     """
-    export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:/usr/local/lib
-
     matcha merge \\
         --min-jaccard ${params.matcha_min_jaccard} \\
         --threads ${task.cpus} \\
