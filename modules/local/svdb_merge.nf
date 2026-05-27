@@ -1,7 +1,7 @@
 
 process SVDB_MERGE {
     label 'bcftools_svdb'
-    label 'C2M16T8'
+    label 'C2M4T24'
     tag "${chr ?: 'all'}"
 
     input:
