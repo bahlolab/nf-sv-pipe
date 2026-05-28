@@ -1,0 +1,11 @@
+{
+  "name": "nextflow-dev",
+  "image": "nfcore/gitpod:latest",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "nextflow.nextflow"
+      ]
+    }
+  }
+}

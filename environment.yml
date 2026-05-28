@@ -5,6 +5,7 @@ channels:
 dependencies:
     - bcftools
     - samtools
-    - pysam
-    - jasminesv
-    - python>=3.7
+    - htslib
+    - wget
+    - jasminesv=1.1.5
+    - truvari=5.4.0

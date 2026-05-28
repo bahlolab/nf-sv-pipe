@@ -1,74 +1,37 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
-/*
-TODO:
- - switch to BCF where possible in intermediate stages
- - exclude regions (e.g. centromeres, gaps)
- - callset merging
-    - naive version: just set ids and use bcftools concat
- */
 
-params.id = ''
-params.ped = ''
-params.bams = ''
-params.ref_fasta = ''
-params.assembly = 'hg38'
-params.callers = ['SMOOVE', 'MANTA', 'CNVNATOR']
-//params.callers = ['MANTA', 'QDNASEQ', 'SMOOVE', 'CNVNATOR']
-params.copy_ref = false
-params.copy_bams = false
 
-include { path; read_tsv; get_families; date_ymd } from './nf/functions'
-include { copy_ref } from './nf/common/copy_ref'
-include { copy_bams } from './nf/common/copy_bams'
-include { concat_vcf } from './nf/common/concat_vcf'
-include { MANTA } from './nf/MANTA'
-include { QDNASEQ } from './nf/QDNASEQ'
-include { SMOOVE } from './nf/SMOOVE'
-include { CNVNATOR } from './nf/CNVNATOR'
-
-ped = read_tsv(path(params.ped), ['fid', 'iid', 'pid', 'mid', 'sex', 'phe'])
-bams = read_tsv(path(params.bams), ['iid', 'bam'])
-ref_fa = path(params.ref_fasta)
-ref_fai = path(params.ref_fasta + '.fai')
+include { path               } from './helpers'
+include { read_tsv           } from './helpers'
+include { check_test_fixtures} from './helpers'
+include { check_callers      } from './helpers'
+include { check_apply_filters} from './helpers'
+include { get_chrs_ch        } from './helpers'
+include { SVPLEX             } from './workflows/sv_plex'
 
 workflow {
 
-    ref_ch = Channel.value([ref_fa, ref_fai])
-    if (params.copy_ref) { ref_ch = copy_ref(ref_ch) }
+    check_test_fixtures()
+    check_callers()
+    check_apply_filters()
 
-    fam_bam_ch =
-        Channel.from(bams) |
-        map { [it.iid, path(it.bam), path(it.bam + '.bai')] } |
-        combine(ped.collect { [it.iid, it.fid] }, by: 0) |
-        map { it[[3,0,1,2]] }
-
-    if (params.copy_bams) { fam_bam_ch = copy_bams(fam_bam_ch) }
-
-    vcfs = Channel.fromList([])
-    n = 0
-
-    if (params.callers.contains('SMOOVE')) {
-        vcfs = SMOOVE(ref_ch, fam_bam_ch)
-        n = n + 1
-    }
-    if (params.callers.contains('MANTA')) {
-        vcfs = vcfs.mix(MANTA(ref_ch, fam_bam_ch))
-        n = n + 1
-    }
-    if (params.callers.contains('QDNASEQ')) {
-        vcfs = vcfs.mix(QDNASEQ(ref_ch, fam_bam_ch))
-        n = n + 1
-    }
-    if (params.callers.contains('CNVNATOR')) {
-        vcfs = vcfs.mix(CNVNATOR(ref_ch, fam_bam_ch))
-        n = n + 1
+    def ped     = read_tsv(path(params.ped),  ['fid', 'iid', 'pid', 'mid', 'sex', 'phe'])
+    def bams    = read_tsv(path(params.bams), ['iid', 'bam'])
+    def ref_fa  = path(params.ref_fasta)
+    def ref_idx = [path(params.ref_fasta + '.fai')]
+    if (params.ref_fasta.endsWith('.gz')) {
+        ref_idx << path(params.ref_fasta + '.gzi')
     }
 
-    if (n > 1){
-        vcfs |
-            toSortedList |
-            map { it.transpose() } |
-            concat_vcf
-    }
+    def ref_ch  = Channel.value([ref_fa, ref_idx])
+    def chrs_ch = get_chrs_ch()
+
+    def fam_bam_ch =
+        Channel.from(bams)
+            .map { [it.iid, path(it.bam), path(it.bam + '.bai')] }
+            .combine(ped.collect { [it.iid, it.fid] }, by: 0)
+            .map { iid, bam, bai, fid -> [params.familial ? fid : iid, iid, bam, bai] }
+
+    SVPLEX(ref_ch, chrs_ch, fam_bam_ch)
 }

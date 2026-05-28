@@ -1,0 +1,15 @@
+venv/
+
+# Nextflow run artifacts
+.nextflow/
+.nextflow.log*
+work/
+trace.txt
+
+# Test artifacts
+test/fixtures/
+test/output/
+test/progress/
+reference_files/
+.Rproj.user/
+*.pyc
