@@ -58,7 +58,7 @@ workflow SVDB {
         }
         CONCAT(concat_split.bcfs, concat_split.csis, 'SVDB')
 
-        CLEAN(CONCAT.out, 'SVDB', params.svdb_info_keep)
+        CLEAN(CONCAT.out, 'SVDB')
 
     emit:
         collapsed = COLLAPSE.out   // [sam, bcf, csi]

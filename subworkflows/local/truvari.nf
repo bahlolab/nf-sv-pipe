@@ -39,7 +39,7 @@ workflow TRUVARI {
             to_merge.map { _sam, _bcf, csi -> csi }.collect()
         )
 
-        CLEAN(MERGE.out, 'TRUVARI', [])
+        CLEAN(MERGE.out, 'TRUVARI')
 
     emit:
         collapsed = COLLAPSE.out   // [sam, bcf, csi]
