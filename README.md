@@ -11,15 +11,12 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 * Create a `nextflow.config` in the run directory, e.g.:
   ```nextflow
   params {
-    // inputs
     id        = 'sv-run'
     ped       = 'families.ped'
     bams      = 'bams.tsv'
-
-    // run config
-    callers   = ['MANTA', 'DYSGU', 'SMOOVE', 'DELLY', 'DELLY_CNV', 'CNVNATOR']
     assembly  = 'hg38'
     ref_fasta = '/path/to/hg38.fasta'
+    outdir    = 'output'
   }
   ```
 * First run:
@@ -42,15 +39,6 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `ref_fasta` | Reference genome FASTA (must be indexed) |
 | `assembly` | Genome build: `'hg38'` (default) or `'hg19'` |
 | `outdir` | Output directory (default: `'output'`) |
-| `caller_vcf_dir` | If set, per-sample per-caller BCFs are copied here under `<caller_vcf_dir>/<CALLER>/` for each active caller (default: `null` — disabled) |
-| `callers` | List of callers to run; supported values: [`MANTA`](https://github.com/Illumina/manta), [`DYSGU`](https://github.com/kcleal/dysgu), [`SMOOVE`](https://github.com/brentp/smoove), [`DELLY`](https://github.com/dellytools/delly), `DELLY_CNV` (DELLY in CNV mode), [`CNVNATOR`](https://github.com/abyzovlab/CNVnator). Order sets merge priority. |
-| `apply_filters` | Callers whose BCFs are PASS-filtered before merging (default: `['DYSGU', 'DELLY']`) |
-| `familial` | Group samples by family for joint calling where supported (default: `true`) |
-| `chrs` | Chromosomes to process; `null` = no restriction, `'auto'` = autosomes + X/Y (default), or a list of names |
-| `svdb` | Run the SVDB merge branch — primary default (default: `true`) |
-| `matcha` | Run the MATCHA merge branch (default: `false`) |
-| `truvari` | Run the TRUVARI merge branch (default: `false`) |
-| `duphold` | Run duphold between per-sample collapse and cohort merge to filter low-quality DEL/DUP calls (default: `true`) |
 
 <details>
 <summary>Advanced parameters</summary>
@@ -59,6 +47,15 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 
 | Param | Description |
 |---|---|
+| `chrs` | Chromosomes to process; `null` = no restriction, `'auto'` = autosomes + X/Y (default), or a list of names |
+| `callers` | List of callers to run; supported values: [`MANTA`](https://github.com/Illumina/manta), [`DYSGU`](https://github.com/kcleal/dysgu), [`SMOOVE`](https://github.com/brentp/smoove), [`DELLY`](https://github.com/dellytools/delly), `DELLY_CNV` (DELLY in CNV mode), [`CNVNATOR`](https://github.com/abyzovlab/CNVnator). Order sets merge priority. |
+| `svdb` | Run the SVDB merge branch — primary default (default: `true`) |
+| `matcha` | Run the MATCHA merge branch (default: `false`) |
+| `truvari` | Run the TRUVARI merge branch (default: `false`) |
+| `duphold` | Run duphold between per-sample collapse and cohort merge to filter low-quality DEL/DUP calls (default: `true`) |
+| `apply_filters` | Callers whose BCFs are PASS-filtered before merging (default: `['DYSGU', 'DELLY']`) |
+| `familial` | Group samples by family for joint calling where supported (default: `false`) |
+| `caller_vcf_dir` | If set, per-sample per-caller BCFs are copied here under `<caller_vcf_dir>/<CALLER>/` for each active caller (default: `null` — disabled) |
 | `chr_prefix` | Chromosome name prefix; `null` = auto-detect (`'chr'` for hg38, `''` for hg19) |
 | `copy_bams` | Copy BAMs to work directory before calling — use when input is on slow or remote storage (default: `false`) |
 | `refdir` | Directory for downloaded reference files (mappability, exclude lists); default: `'reference_files'` |
