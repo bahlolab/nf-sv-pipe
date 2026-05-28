@@ -12,16 +12,14 @@ process DELLY_CNV_NORM {
 
     script:
     out_bcf = "${sam}.DELLY_CNV.bcf"
-    def max_dels = params.delly_cnv_max_dels
-    def max_dups = params.delly_cnv_max_dups
-    def del_cap = max_dels ?
+    def del_cap = params.delly_cnv_max_dels ?
         """
-        del_thr=\$(bcftools query -i 'INFO/SVTYPE=="DEL"' -f '%QUAL\\n' normed.bcf | sort -rn | sed -n '${max_dels}p')
+        del_thr=\$(bcftools query -i 'INFO/SVTYPE=="DEL"' -f '%QUAL\\n' normed.bcf | sort -rn | sed -n '${params.delly_cnv_max_dels}p')
         [ -n "\$del_thr" ] && del_excl='INFO/SVTYPE=="DEL" && QUAL<'\$del_thr || del_excl='0'
         """ : "del_excl='0'"
-    def dup_cap = max_dups ?
+    def dup_cap = params.delly_cnv_max_dups ?
         """
-        dup_thr=\$(bcftools query -i 'INFO/SVTYPE=="DUP"' -f '%QUAL\\n' normed.bcf | sort -rn | sed -n '${max_dups}p')
+        dup_thr=\$(bcftools query -i 'INFO/SVTYPE=="DUP"' -f '%QUAL\\n' normed.bcf | sort -rn | sed -n '${params.delly_cnv_max_dups}p')
         [ -n "\$dup_thr" ] && dup_excl='INFO/SVTYPE=="DUP" && QUAL<'\$dup_thr || dup_excl='0'
         """ : "dup_excl='0'"
     """
@@ -32,7 +30,7 @@ process DELLY_CNV_NORM {
 
     ${del_cap}
     ${dup_cap}
-    echo "DELLY_CNV_NORM ${sam}: del_min_qual=\${del_thr:-unset} (max_dels ${max_dels ?: 'unset'}); dup_min_qual=\${dup_thr:-unset} (max_dups ${max_dups ?: 'unset'})"
+    echo "DELLY_CNV_NORM ${sam}: del_min_qual=\${del_thr:-unset} (max_dels ${params.delly_cnv_max_dels ?: 'unset'}); dup_min_qual=\${dup_thr:-unset} (max_dups ${params.delly_cnv_max_dups ?: 'unset'})"
 
     bcftools view --threads ${task.cpus} -e "(\$del_excl) || (\$dup_excl)" normed.bcf -Ob -o ${out_bcf}
     bcftools index --threads ${task.cpus} ${out_bcf}

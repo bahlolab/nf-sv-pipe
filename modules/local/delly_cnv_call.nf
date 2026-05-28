@@ -14,7 +14,7 @@ process DELLY_CNV_CALL {
     tuple val(sam), path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_bcf = "${sam}.DELLY_CNV.bcf"
+    out_bcf = "${sam}.DELLY_CNV.raw.bcf"
     """
     delly cnv -q ${params.min_mapq} -g $ref_fa -m $map_fa -o $out_bcf $bam
     """

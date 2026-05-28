@@ -3,10 +3,8 @@ process SMOOVE_CALL {
     label 'smoove'
     tag { fam }
     cpus   { [2, (bams instanceof List ? bams : [bams]).size() * 2].max() }
-    memory { [8.GB, (bams instanceof List ? bams : [bams]).size() * 8.GB].max() }
-    time   { 8.h * task.attempt }
-    maxRetries 2
-    errorStrategy { task.attempt <= 2 ? 'retry' : 'finish' }
+    memory { 8.GB + (bams instanceof List ? bams : [bams]).size() * 8.GB }
+    time   { 24.h * task.attempt }
     storeDir params.cachedir ? "${params.cachedir}/SMOOVE_CALL" : null
 
 

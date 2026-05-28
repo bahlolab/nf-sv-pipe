@@ -2,7 +2,6 @@
 process BCFTOOLS_CONCAT {
     label 'bcftools'
     label 'C2M4T4'
-    publishDir "$params.outdir", mode: 'copy'
 
     input:
     path(bcfs)
@@ -13,7 +12,7 @@ process BCFTOOLS_CONCAT {
     tuple path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_bcf = "${params.id}.${tag}.cohort.bcf"
+    out_bcf = "${params.id}.${tag}.merge.bcf"
     """
     bcftools concat --threads ${task.cpus} -Ob -o ${out_bcf} ${bcfs.join(' ')}
     bcftools index --threads ${task.cpus} ${out_bcf}

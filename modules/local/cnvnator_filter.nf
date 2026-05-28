@@ -1,5 +1,5 @@
 
-process CNVNATOR_TO_BCF {
+process CNVNATOR_FILTER {
     label 'bcftools'
     label 'C2M2T2'
     tag { sam }
@@ -8,6 +8,7 @@ process CNVNATOR_TO_BCF {
     input:
     tuple val(sam), path(cnvnator_out)
     path(fai)
+    path(excl_tsv)
 
     output:
     tuple val(sam), path(out_bcf), path("${out_bcf}.csi")
@@ -15,7 +16,7 @@ process CNVNATOR_TO_BCF {
     script:
     out_bcf = "${sam}.CNVNATOR.bcf"
     """
-    cnvnator2VCF.awk -v prefix=$sam -v sample_name=$sam $cnvnator_out |
+    cnvnator2VCF.awk -v prefix=$sam -v sample_name=$sam -v exclude_tsv=$excl_tsv -v min_overlap=${params.cnvnator_exclude_overlap} $cnvnator_out |
         bcftools reheader --fai $fai - |
         bcftools view --threads ${task.cpus} -Ob -o ${out_bcf}
     bcftools index --threads ${task.cpus} ${out_bcf}

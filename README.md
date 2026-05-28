@@ -69,6 +69,7 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `delly_cnv_max_dels` | If set, cap DELLY_CNV DEL callsets to top N by QUAL after CNV-normalisation (default: `2000`) |
 | `delly_cnv_max_dups` | If set, cap DELLY_CNV DUP callsets to top N by QUAL after CNV-normalisation (default: `1000`) |
 | `cnvnator_bin_size` | CNVnator bin size in bp (default: `1000`) |
+| `cnvnator_exclude_overlap` | Drop CNVnator calls where the fraction of call length overlapping a delly exclude-list interval exceeds this threshold (default: `0.7`) |
 | `duphold_min_size` | Minimum DEL/DUP size in bp for duphold annotation; smaller variants bypass duphold (default: `1000`) |
 | `duphold_del_dhffc` | Exclude DELs where `FMT/DHFFC[0]` exceeds this threshold (default: `0.75`) |
 | `duphold_dup_dhbfc` | Exclude DUPs where `FMT/DHBFC[0]` is below this threshold (default: `1.25`) |

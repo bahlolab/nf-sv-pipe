@@ -1,6 +1,7 @@
 
 include { TRUVARI_COLLAPSE as COLLAPSE } from '../../modules/local/truvari_collapse'
 include { TRUVARI_MERGE    as MERGE    } from '../../modules/local/truvari_merge'
+include { BCF_CLEAN        as CLEAN    } from '../../modules/local/bcf_clean'
 include { DUPHOLD                      } from '../../modules/local/duphold'
 
 workflow TRUVARI {
@@ -38,7 +39,9 @@ workflow TRUVARI {
             to_merge.map { _sam, _bcf, csi -> csi }.collect()
         )
 
+        CLEAN(MERGE.out, 'TRUVARI', [])
+
     emit:
         collapsed = COLLAPSE.out   // [sam, bcf, csi]
-        merged    = MERGE.out      // [cohort.bcf, cohort.bcf.csi]
+        merged    = CLEAN.out      // [cohort.bcf, cohort.bcf.csi]
 }

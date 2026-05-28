@@ -28,7 +28,7 @@ workflow SVPLEX {
             .map {fam, sam, bam, bai -> [ groupKey(fam, sam.size()), sam, bam, bai] }
             .transpose()
 
-        def needs_ref = params.callers.intersect(['MANTA', 'SMOOVE', 'DELLY', 'DELLY_CNV'])
+        def needs_ref = params.callers.intersect(['MANTA', 'SMOOVE', 'DELLY', 'DELLY_CNV', 'CNVNATOR'])
         if (needs_ref) { FETCH_REFERENCE_FILES() }
 
         if (params.copy_bams) { fam_bam_ch = COPY_BAMS(fam_bam_ch) }
@@ -38,7 +38,7 @@ workflow SVPLEX {
             vcfs = vcfs.mix(MANTA(ref_ch, fam_bam_ch, call_regions_ch).vcfs)
         }
         if (params.callers.contains('SMOOVE'))    { vcfs = vcfs.mix(SMOOVE(ref_ch, fam_bam_ch, FETCH_REFERENCE_FILES.out.smoove_excl).vcfs) }
-        if (params.callers.contains('CNVNATOR'))  { vcfs = vcfs.mix(CNVNATOR(ref_ch, chrs_ch, fam_bam_ch).vcfs) }
+        if (params.callers.contains('CNVNATOR'))  { vcfs = vcfs.mix(CNVNATOR(ref_ch, chrs_ch, fam_bam_ch, FETCH_REFERENCE_FILES.out.delly_excl).vcfs) }
         if (params.callers.contains('DELLY'))     { vcfs = vcfs.mix(DELLY(ref_ch, fam_bam_ch, FETCH_REFERENCE_FILES.out.delly_excl).vcfs) }
         if (params.callers.contains('DELLY_CNV')) { vcfs = vcfs.mix(DELLY_CNV(ref_ch, fam_bam_ch, FETCH_REFERENCE_FILES.out.delly_map).vcfs) }
         if (params.callers.contains('DYSGU'))     { vcfs = vcfs.mix(DYSGU(ref_ch, fam_bam_ch).vcfs) }

@@ -2,7 +2,6 @@
 process TRUVARI_MERGE {
     label 'bcftools_truvari'
     label 'C4M16T4'
-    publishDir "$params.outdir", mode: 'copy'
 
     input:
     path(bcfs)
@@ -12,7 +11,7 @@ process TRUVARI_MERGE {
     tuple path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_bcf = "${params.id}.TRUVARI.cohort.bcf"
+    out_bcf = "${params.id}.TRUVARI.merge.bcf"
     def filter_cmd = params.truvari_cohort_filter \
         ? "bcftools view --threads ${task.cpus} -i '${params.truvari_cohort_filter}' -Ob -o ${out_bcf} collapsed.bcf" \
         : "mv collapsed.bcf ${out_bcf}"

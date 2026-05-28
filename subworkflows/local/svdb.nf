@@ -2,6 +2,7 @@
 include { SVDB_COLLAPSE   as COLLAPSE } from '../../modules/local/svdb_collapse'
 include { SVDB_MERGE      as MERGE    } from '../../modules/local/svdb_merge'
 include { BCFTOOLS_CONCAT as CONCAT   } from '../../modules/local/bcftools_concat'
+include { BCF_CLEAN       as CLEAN    } from '../../modules/local/bcf_clean'
 include { DUPHOLD                     } from '../../modules/local/duphold'
 
 workflow SVDB {
@@ -57,7 +58,9 @@ workflow SVDB {
         }
         CONCAT(concat_split.bcfs, concat_split.csis, 'SVDB')
 
+        CLEAN(CONCAT.out, 'SVDB', params.svdb_info_keep)
+
     emit:
         collapsed = COLLAPSE.out   // [sam, bcf, csi]
-        merged    = CONCAT.out     // [cohort.bcf, cohort.bcf.csi]
+        merged    = CLEAN.out      // [cohort.bcf, cohort.bcf.csi]
 }
