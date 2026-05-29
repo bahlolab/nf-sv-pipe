@@ -33,7 +33,7 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 
 | Param | Description |
 |---|---|
-| `id` | Unique name for the run; used in output filenames |
+| `id` | Unique name for the run; used in output filenames (default: `'SVPLEX'`) |
 | `ped` | Path to a [PED format file](https://gatk.broadinstitute.org/hc/en-us/articles/360035531972-PED-Pedigree-format); only the first two columns (family ID, sample ID) are used |
 | `bams` | Path to a TSV with sample ID in column 1 and path to indexed BAM/CRAM in column 2 (no header) |
 | `ref_fasta` | Reference genome FASTA (must be indexed) |
@@ -48,7 +48,7 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | Param | Description |
 |---|---|
 | `chrs` | Chromosomes to process; `null` = no restriction, `'auto'` = autosomes + X/Y (default), or a list of names |
-| `callers` | List of callers to run; supported values: [`MANTA`](https://github.com/Illumina/manta), [`DYSGU`](https://github.com/kcleal/dysgu), [`SMOOVE`](https://github.com/brentp/smoove), [`DELLY`](https://github.com/dellytools/delly), `DELLY_CNV` (DELLY in CNV mode), [`CNVNATOR`](https://github.com/abyzovlab/CNVnator). Order sets merge priority. |
+| `callers` | List of callers to run; supported values: [`MANTA`](https://github.com/Illumina/manta), [`DYSGU`](https://github.com/kcleal/dysgu), [`SMOOVE`](https://github.com/brentp/smoove), [`DELLY`](https://github.com/dellytools/delly), `DELLY_CNV` (DELLY in CNV mode), [`CNVNATOR`](https://github.com/abyzovlab/CNVnator). Order sets merge priority (default: all six — `['MANTA', 'DYSGU', 'SMOOVE', 'DELLY', 'DELLY_CNV', 'CNVNATOR']`) |
 | `svdb` | Run the SVDB merge branch — primary default (default: `true`) |
 | `matcha` | Run the MATCHA merge branch (default: `false`) |
 | `truvari` | Run the TRUVARI merge branch (default: `false`) |
@@ -71,8 +71,8 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `duphold_max_dels` | If set, cap DELs passing duphold by tightening DHFFC so at most N DELs pass (default: `4000`) |
 | `duphold_max_dups` | If set, cap DUPs passing duphold by tightening DHBFC so at most N DUPs pass (default: `1000`) |
 | `matcha_min_jaccard` | Minimum Jaccard similarity for matcha collapse/merge (default: `0.75`) |
-| `matcha_sample_filter` | bcftools `-i` filter applied after per-sample matcha collapse; default keeps events detected by ≥2 callers (or PASS) |
-| `matcha_cohort_filter` | bcftools `-i` filter applied after matcha cohort merge; default keeps events detected by ≥2 callers in at least one sample |
+| `matcha_sample_filter` | bcftools `-i` filter applied after per-sample matcha collapse (default: `'FILTER="PASS" || INFO/N_CALLERS>1'` — keeps PASS calls or events detected by ≥2 callers) |
+| `matcha_cohort_filter` | bcftools `-i` filter applied after matcha cohort merge (default: `'INFO/N_CALLERS>1'` — keeps events detected by ≥2 callers in at least one sample) |
 | `truvari_itvl_refdist` | DEL/DUP/INV collapse `--refdist` — max bp distance between breakpoints (default: `10000`) |
 | `truvari_itvl_pctovl` | DEL/DUP/INV collapse `--pctovl` — min reciprocal overlap fraction (default: `0.75`) |
 | `truvari_bnd_refdist` | BND/INS collapse `--refdist` — max bp distance between breakpoints (default: `50`) |
@@ -84,6 +84,7 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `svdb_bnd_distance` | SVDB `--bnd_distance`: max bp distance between precise breakpoints, both stages (default: `50`) |
 | `svdb_sample_filter` | bcftools `-i` filter applied after per-sample SVDB collapse; default keeps events detected by ≥2 callers (`FOUNDBY>1`) |
 | `svdb_cohort_filter` | bcftools `-i` filter applied after SVDB cohort merge (default: `null` — no filter) |
+| `svdb_info_keep` | INFO fields retained in SVDB output BCFs (default: `['SVTYPE', 'SVLEN', 'END', 'POS2', 'CHR2', 'set', 'FOUNDBY', 'svdb_origin', 'SUPP_VEC']`) |
 
 </details>
 
