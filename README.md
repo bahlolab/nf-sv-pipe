@@ -29,63 +29,6 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
   ```
 * Note: recommended to run in a `screen` or `tmux` session
 
-### Manifests
-
-Every normal run writes two manifest TSVs alongside the cohort outputs:
-
-| File | Columns | What it lists | Use it as input via |
-|---|---|---|---|
-| `${id}.caller_manifest.tsv` | `sample`, `caller`, `path` | Per-sample raw caller BCFs published under `${outdir}/<CALLER>/` | `--caller_manifest` |
-| `${id}.merge_manifest.tsv`  | `sample`, `branch`, `path` | Per-sample post-collapse/duphold BCFs (one per active merge branch) published under `${outdir}/<BRANCH>/` | `--merge_manifest` |
-
-The two manifests serve **independent** use cases:
-
-#### `caller_manifest` — cache calling
-
-When a `caller_manifest` is provided, the pipeline skips re-calling for any sample with a cached entry for a given caller. Everything downstream (PASS filter, collapse, duphold, cohort merge) still runs.
-
-Typical use: persistent caching of caller calls. Nextflow's own `-resume` cache lives in the work directory, which on shared HPC scratch is often auto-cleaned; the `caller_manifest` lets you skip re-running callers on a fresh work dir.
-
-```bash
-# First run — produces out/run1.caller_manifest.tsv
-nextflow run /PATH/TO/nf-sv-pipe --bams cohort.bams --ped fam.ped \
-    --outdir out --id run1
-
-# Later run (e.g. after scratch cleanup) — reuses cached caller BCFs
-nextflow run /PATH/TO/nf-sv-pipe --bams cohort.bams --ped fam.ped \
-    --caller_manifest out/run1.caller_manifest.tsv \
-    --outdir out --id run2
-```
-
-(When `params.familial=true`, joint callers MANTA/DELLY are skipped per family only if every sample in the family has a cached entry; otherwise the caller re-runs for the whole family.)
-
-#### `merge_manifest` — merge across batches processed separately
-
-When all BAMs can't fit on disk simultaneously, split the cohort into batches, run each batch independently (each writes its own `merge_manifest`), then run **once more in merge-only mode** with the concatenated manifests to produce the cohort:
-
-```bash
-# Batch 1
-nextflow run /PATH/TO/nf-sv-pipe --bams batch1.bams --ped fam.ped \
-    --outdir out_b1 --id batch1
-# → out_b1/batch1.merge_manifest.tsv
-
-# Batch 2
-nextflow run /PATH/TO/nf-sv-pipe --bams batch2.bams --ped fam.ped \
-    --outdir out_b2 --id batch2
-
-# Concatenate the per-batch merge manifests
-cat out_b{1,2}/*.merge_manifest.tsv > combined.merge_manifest.tsv
-
-# Cross-batch merge — runs ONLY cohort merging. No BAMs needed.
-nextflow run /PATH/TO/nf-sv-pipe \
-    --merge_manifest combined.merge_manifest.tsv \
-    --outdir out_merge --id merged
-```
-
-Setting `--merge_manifest` puts the pipeline into **merge-only mode**: callers, PASS filter, per-sample collapse, and duphold are *all* skipped. Any `--bams` / `--ped` / `--caller_manifest` supplied alongside is ignored (with a warning). Every sample in the manifest must have an entry for every active merge branch (MATCHA / SVDB / TRUVARI per `params.matcha`/`svdb`/`truvari`).
-
-> **Note**: the multi-batch workflow requires `params.duphold=true` (the default). With `--duphold false`, `merge_manifest.tsv` is written empty because the per-sample BCFs fed to cohort merge are COLLAPSE outputs, which are not published to a durable path. Cross-batch merging in that configuration is not currently supported.
-
 ## Params
 
 | Param | Description |
@@ -170,6 +113,63 @@ The raw per-sample BCF from each caller is auto-published under `${params.outdir
 ### Cross-batch merge inputs (in `${outdir}/<BRANCH>/`)
 
 The per-sample post-collapse/duphold BCF for each active merge branch (MATCHA/SVDB/TRUVARI) is auto-published under `${params.outdir}/<BRANCH>/`. These paths are listed in `${id}.merge_manifest.tsv`; concatenating per-batch merge manifests and passing the result via `--merge_manifest` triggers merge-only mode (no calls run, only cohort merging).
+
+## Manifests
+
+Every normal run writes two manifest TSVs alongside the cohort outputs:
+
+| File | Columns | What it lists | Use it as input via |
+|---|---|---|---|
+| `${id}.caller_manifest.tsv` | `sample`, `caller`, `path` | Per-sample raw caller BCFs published under `${outdir}/<CALLER>/` | `--caller_manifest` |
+| `${id}.merge_manifest.tsv`  | `sample`, `branch`, `path` | Per-sample post-collapse/duphold BCFs (one per active merge branch) published under `${outdir}/<BRANCH>/` | `--merge_manifest` |
+
+The two manifests serve **independent** use cases:
+
+### `caller_manifest` — cache calling
+
+When a `caller_manifest` is provided, the pipeline skips re-calling for any sample with a cached entry for a given caller. Everything downstream (PASS filter, collapse, duphold, cohort merge) still runs.
+
+Typical use: persistent caching of caller calls. Nextflow's own `-resume` cache lives in the work directory, which on shared HPC scratch is often auto-cleaned; the `caller_manifest` lets you skip re-running callers on a fresh work dir.
+
+```bash
+# First run — produces out/run1.caller_manifest.tsv
+nextflow run /PATH/TO/nf-sv-pipe --bams cohort.bams --ped fam.ped \
+    --outdir out --id run1
+
+# Later run (e.g. after scratch cleanup) — reuses cached caller BCFs
+nextflow run /PATH/TO/nf-sv-pipe --bams cohort.bams --ped fam.ped \
+    --caller_manifest out/run1.caller_manifest.tsv \
+    --outdir out --id run2
+```
+
+(When `params.familial=true`, joint callers MANTA/DELLY are skipped per family only if every sample in the family has a cached entry; otherwise the caller re-runs for the whole family.)
+
+### `merge_manifest` — merge across batches processed separately
+
+When all BAMs can't fit on disk simultaneously, split the cohort into batches, run each batch independently (each writes its own `merge_manifest`), then run **once more in merge-only mode** with the concatenated manifests to produce the cohort:
+
+```bash
+# Batch 1
+nextflow run /PATH/TO/nf-sv-pipe --bams batch1.bams --ped fam.ped \
+    --outdir out_b1 --id batch1
+# → out_b1/batch1.merge_manifest.tsv
+
+# Batch 2
+nextflow run /PATH/TO/nf-sv-pipe --bams batch2.bams --ped fam.ped \
+    --outdir out_b2 --id batch2
+
+# Concatenate the per-batch merge manifests
+cat out_b{1,2}/*.merge_manifest.tsv > combined.merge_manifest.tsv
+
+# Cross-batch merge — runs ONLY cohort merging. No BAMs needed.
+nextflow run /PATH/TO/nf-sv-pipe \
+    --merge_manifest combined.merge_manifest.tsv \
+    --outdir out_merge --id merged
+```
+
+Setting `--merge_manifest` puts the pipeline into **merge-only mode**: callers, PASS filter, per-sample collapse, and duphold are *all* skipped. Any `--bams` / `--ped` / `--caller_manifest` supplied alongside is ignored (with a warning). Every sample in the manifest must have an entry for every active merge branch (MATCHA / SVDB / TRUVARI per `params.matcha`/`svdb`/`truvari`).
+
+> **Note**: the multi-batch workflow requires `params.duphold=true` (the default). With `--duphold false`, `merge_manifest.tsv` is written empty because the per-sample BCFs fed to cohort merge are COLLAPSE outputs, which are not published to a durable path. Cross-batch merging in that configuration is not currently supported.
 
 ## Implementation
 
