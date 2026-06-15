@@ -3,6 +3,7 @@ process DELLY_CNV_NORM {
     label 'bcftools'
     label 'C2M2T2'
     tag { sam }
+    publishDir "${params.outdir}/DELLY_CNV", mode: 'copy'
 
     input:
     tuple val(sam), path(bcf), path(csi)

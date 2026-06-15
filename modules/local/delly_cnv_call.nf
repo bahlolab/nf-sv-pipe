@@ -3,7 +3,6 @@ process DELLY_CNV_CALL {
     label 'delly'
     label 'C2M16T8'
     tag { sam }
-    storeDir params.cachedir ? "${params.cachedir}/DELLY_CNV_CALL" : null
 
     input:
     tuple val(sam), path(bam), path(bai)

@@ -11,7 +11,7 @@ workflow MANTA {
 
     main:
         fam_sizes = fam_bam_ch
-            .map { fam, sam, bam, bai -> [fam, sam] }
+            .map { fam, sam, _bam, _bai -> [fam, sam] }
             .groupTuple(by: 0)
             .map { fam, sams -> [fam, sams.size()] }
 
@@ -22,48 +22,46 @@ workflow MANTA {
                 multi:     true
             }
 
-        // Singletons: use sam as the call id so output is named after the sample.
-        // Wrap bam/bai in lists so bam.join() in MANTA_CALL works uniformly.
+        // Singletons: use sam as the call id so output is named per-sample. bam/bai wrapped in lists for MANTA_CALL's bam.join().
         singleton_grouped = branched.singleton
-            .map { fam, sam, bam, bai, size -> [sam, [bam], [bai]] }
+            .map { _fam, sam, bam, bai, _size -> [sam, [bam], [bai]] }
 
         multi_grouped = branched.multi
-            .map { fam, sam, bam, bai, size -> [fam, bam, bai] }
+            .map { fam, _sam, bam, bai, _size -> [fam, bam, bai] }
             .groupTuple(by: 0)
 
-        // Tag each call id as singleton (true) or multi (false) for downstream routing
-        id_is_singleton = singleton_grouped.map { sam, bams, bais -> [sam, true] }
-            .mix(multi_grouped.map    { fam, bams, bais -> [fam, false] })
+        id_is_singleton = singleton_grouped.map { sam, _b, _i -> [sam, true] }
+            .mix(multi_grouped.map { fam, _b, _i -> [fam, false] })
 
         CALL(singleton_grouped.mix(multi_grouped), ref_ch, call_regions_ch)
 
-        FIX_VCF(CALL.out)
-
-        fix_tagged = FIX_VCF.out
+        call_tagged = CALL.out
             .combine(id_is_singleton, by: 0)
             .branch {
                 singleton: it[3] == true
                 multi:     true
             }
 
-        // Singletons: id IS sam and file is already named per-sample — emit directly
-        singleton_vcfs = fix_tagged.singleton
-            .map { sam, bcf, csi, _x -> ['MANTA', sam, bcf, csi] }
+        // Singletons: CALL.out already named per-sample (id=sam) — go straight to FIX.
+        singleton_to_fix = call_tagged.singleton
+            .map { sam, vcf, tbi, _x -> [sam, vcf, tbi] }
 
-        // Multi: split family-level BCF into per-sample BCFs
-        SPLIT(fix_tagged.multi.map { fam, bcf, csi, _x -> [fam, bcf, csi] }, 'MANTA')
+        // Multi: split family-level VCF into per-sample BCFs (intermediate, not published) then FIX.
+        SPLIT(call_tagged.multi.map { fam, vcf, tbi, _x -> [fam, vcf, tbi] }, 'MANTA', false)
 
-        split_vcfs = SPLIT.out
-            .flatMap { fam, bcfs, csis ->
+        split_to_fix = SPLIT.out
+            .flatMap { _fam, bcfs, csis ->
                 def bs = bcfs instanceof List ? bcfs : [bcfs]
                 def cs = csis instanceof List ? csis : [csis]
                 [bs, cs].transpose().collect { bcf, csi ->
                     def sam = bcf.name.replaceFirst(/\.MANTA\.bcf$/, '')
-                    ['MANTA', sam, bcf, csi]
+                    [sam, bcf, csi]
                 }
             }
 
-        vcfs = singleton_vcfs.mix(split_vcfs)
+        FIX_VCF(singleton_to_fix.mix(split_to_fix))
+
+        vcfs = FIX_VCF.out.map { sam, bcf, csi -> ['MANTA', sam, bcf, csi] }
 
     emit:
         vcfs

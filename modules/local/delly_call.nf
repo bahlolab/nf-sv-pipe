@@ -3,10 +3,10 @@ process DELLY_CALL {
     label 'delly'
     label 'C2M4T24'
     tag { sam }
-    storeDir params.cachedir ? "${params.cachedir}/DELLY_CALL" : null
+    publishDir "${params.outdir}/DELLY", mode: 'copy', saveAs: { fn -> publish ? fn : null }
 
     input:
-    tuple val(sam), path(bam), path(bai)
+    tuple val(sam), path(bam), path(bai), val(publish)
     tuple path(ref_fa), path(ref_idx)
     path(excl)
 

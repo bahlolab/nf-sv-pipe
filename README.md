@@ -29,6 +29,63 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
   ```
 * Note: recommended to run in a `screen` or `tmux` session
 
+### Manifests
+
+Every normal run writes two manifest TSVs alongside the cohort outputs:
+
+| File | Columns | What it lists | Use it as input via |
+|---|---|---|---|
+| `${id}.caller_manifest.tsv` | `sample`, `caller`, `path` | Per-sample raw caller BCFs published under `${outdir}/<CALLER>/` | `--caller_manifest` |
+| `${id}.merge_manifest.tsv`  | `sample`, `branch`, `path` | Per-sample post-collapse/duphold BCFs (one per active merge branch) published under `${outdir}/<BRANCH>/` | `--merge_manifest` |
+
+The two manifests serve **independent** use cases:
+
+#### `caller_manifest` — cache calling
+
+When a `caller_manifest` is provided, the pipeline skips re-calling for any sample with a cached entry for a given caller. Everything downstream (PASS filter, collapse, duphold, cohort merge) still runs.
+
+Typical use: persistent caching of caller calls. Nextflow's own `-resume` cache lives in the work directory, which on shared HPC scratch is often auto-cleaned; the `caller_manifest` lets you skip re-running callers on a fresh work dir.
+
+```bash
+# First run — produces out/run1.caller_manifest.tsv
+nextflow run /PATH/TO/nf-sv-pipe --bams cohort.bams --ped fam.ped \
+    --outdir out --id run1
+
+# Later run (e.g. after scratch cleanup) — reuses cached caller BCFs
+nextflow run /PATH/TO/nf-sv-pipe --bams cohort.bams --ped fam.ped \
+    --caller_manifest out/run1.caller_manifest.tsv \
+    --outdir out --id run2
+```
+
+(When `params.familial=true`, joint callers MANTA/DELLY are skipped per family only if every sample in the family has a cached entry; otherwise the caller re-runs for the whole family.)
+
+#### `merge_manifest` — merge across batches processed separately
+
+When all BAMs can't fit on disk simultaneously, split the cohort into batches, run each batch independently (each writes its own `merge_manifest`), then run **once more in merge-only mode** with the concatenated manifests to produce the cohort:
+
+```bash
+# Batch 1
+nextflow run /PATH/TO/nf-sv-pipe --bams batch1.bams --ped fam.ped \
+    --outdir out_b1 --id batch1
+# → out_b1/batch1.merge_manifest.tsv
+
+# Batch 2
+nextflow run /PATH/TO/nf-sv-pipe --bams batch2.bams --ped fam.ped \
+    --outdir out_b2 --id batch2
+
+# Concatenate the per-batch merge manifests
+cat out_b{1,2}/*.merge_manifest.tsv > combined.merge_manifest.tsv
+
+# Cross-batch merge — runs ONLY cohort merging. No BAMs needed.
+nextflow run /PATH/TO/nf-sv-pipe \
+    --merge_manifest combined.merge_manifest.tsv \
+    --outdir out_merge --id merged
+```
+
+Setting `--merge_manifest` puts the pipeline into **merge-only mode**: callers, PASS filter, per-sample collapse, and duphold are *all* skipped. Any `--bams` / `--ped` / `--caller_manifest` supplied alongside is ignored (with a warning). Every sample in the manifest must have an entry for every active merge branch (MATCHA / SVDB / TRUVARI per `params.matcha`/`svdb`/`truvari`).
+
+> **Note**: the multi-batch workflow requires `params.duphold=true` (the default). With `--duphold false`, `merge_manifest.tsv` is written empty because the per-sample BCFs fed to cohort merge are COLLAPSE outputs, which are not published to a durable path. Cross-batch merging in that configuration is not currently supported.
+
 ## Params
 
 | Param | Description |
@@ -52,14 +109,14 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `svdb` | Run the SVDB merge branch — primary default (default: `true`) |
 | `matcha` | Run the MATCHA merge branch (default: `false`) |
 | `truvari` | Run the TRUVARI merge branch (default: `false`) |
-| `duphold` | Run duphold between per-sample collapse and cohort merge to filter low-quality DEL/DUP calls (default: `true`) |
 | `apply_filters` | Callers whose BCFs are PASS-filtered before merging (default: `['DYSGU', 'DELLY']`) |
 | `familial` | Group samples by family for joint calling where supported (default: `false`) |
-| `caller_vcf_dir` | If set, per-sample per-caller BCFs are copied here under `<caller_vcf_dir>/<CALLER>/` for each active caller (default: `null` — disabled) |
+| `duphold` | Run duphold between per-sample collapse and cohort merge to filter low-quality DEL/DUP calls (default: `true`) |
+| `caller_manifest` | Optional TSV (`sample<TAB>caller<TAB>path`) of cached per-sample per-caller BCFs. When provided, caller calls are skipped for families whose every sample has a cached entry (joint-call all-or-nothing rule). Per-caller BCFs are auto-published to `${outdir}/<CALLER>/`. A new `${id}.caller_manifest.tsv` is written each run. Ignored in merge-only mode. |
+| `merge_manifest` | Optional TSV (`sample<TAB>branch<TAB>path`) of per-sample post-collapse/duphold BCFs. **If set, triggers merge-only mode**: `params.bams` and `params.caller_manifest` are ignored (with a warning); only the samples listed are merged. Every sample must have an entry for every active merge branch. Per-branch DUPHOLD BCFs are auto-published to `${outdir}/<BRANCH>/`. A new `${id}.merge_manifest.tsv` is written in normal mode. |
 | `chr_prefix` | Chromosome name prefix; `null` = auto-detect (`'chr'` for hg38, `''` for hg19) |
 | `copy_bams` | Copy BAMs to work directory before calling — use when input is on slow or remote storage (default: `false`) |
 | `refdir` | Directory for downloaded reference files (mappability, exclude lists); default: `'reference_files'` |
-| `cachedir` | `storeDir` path for long-term caching of caller call outputs, collapse, duphold, and merge steps; `null` = always re-run (default). Set to a path outside the Nextflow work directory so cached outputs survive work-dir cleans. |
 | `min_mapq` | Minimum mapping quality for reads (default: `15`) |
 | `delly_cnv_max_dels` | If set, cap DELLY_CNV DEL callsets to top N by QUAL after CNV-normalisation (default: `2000`) |
 | `delly_cnv_max_dups` | If set, cap DELLY_CNV DUP callsets to top N by QUAL after CNV-normalisation (default: `1000`) |
@@ -106,9 +163,13 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `TRUVARI/<sample>.TRUVARI.bcf` (+ `.csi`) | Per-sample BCF with calls from all callers collapsed by truvari (only if `params.truvari`) |
 | `SVDB/<sample>.SVDB.bcf` (+ `.csi`) | Per-sample BCF with calls from all callers collapsed by SVDB (only if `params.svdb`) |
 
-### Per-caller per-sample BCFs (in `params.caller_vcf_dir`, if set)
+### Per-caller per-sample BCFs (in `${outdir}/<CALLER>/`)
 
-When `caller_vcf_dir` is set, the raw per-sample BCF from each caller is copied to `<caller_vcf_dir>/<CALLER>/` before any merging or filtering. Filename convention: `<sample>.<CALLER>.bcf` (+ `.csi`). For DELLY samples in multi-member families the file is `<sample>.DELLY.geno.bcf` (genotyped against a joint site list).
+The raw per-sample BCF from each caller is auto-published under `${params.outdir}/<CALLER>/`. Filename convention: `<sample>.<CALLER>.bcf` (+ `.csi`). For DELLY samples in multi-member families the file is `<sample>.DELLY.geno.bcf` (genotyped against a joint site list). These paths are listed in `${id}.caller_manifest.tsv` and can be fed back into a later run via `--caller_manifest`.
+
+### Cross-batch merge inputs (in `${outdir}/<BRANCH>/`)
+
+The per-sample post-collapse/duphold BCF for each active merge branch (MATCHA/SVDB/TRUVARI) is auto-published under `${params.outdir}/<BRANCH>/`. These paths are listed in `${id}.merge_manifest.tsv`; concatenating per-batch merge manifests and passing the result via `--merge_manifest` triggers merge-only mode (no calls run, only cohort merging).
 
 ## Implementation
 

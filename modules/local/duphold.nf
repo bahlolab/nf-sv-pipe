@@ -3,6 +3,7 @@ process DUPHOLD {
     label 'smoove'
     label 'C2M8T8'
     tag "$sam"
+    publishDir { "${params.outdir}/${branch}" }, mode: 'copy'
 
     input:
     tuple val(branch), val(sam), path(bcf), path(csi), path(bam), path(bai)

@@ -3,7 +3,7 @@ process CNVNATOR_FILTER {
     label 'bcftools'
     label 'C2M2T2'
     tag { sam }
-
+    publishDir "${params.outdir}/CNVNATOR", mode: 'copy'
 
     input:
     tuple val(sam), path(cnvnator_out)

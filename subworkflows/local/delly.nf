@@ -10,7 +10,14 @@ workflow DELLY {
         excl_ch     // value: delly exclude TSV
 
     main:
-        sam_bam_ch = fam_bam_ch.map { _fam, sam, bam, bai -> [sam, bam, bai] }
+        fam_sizes = fam_bam_ch
+            .map { fam, sam, _bam, _bai -> [fam, sam] }
+            .groupTuple(by: 0)
+            .map { fam, sams -> [fam, sams.size()] }
+
+        sam_bam_ch = fam_bam_ch
+            .combine(fam_sizes, by: 0)
+            .map { _fam, sam, bam, bai, size -> [sam, bam, bai, size == 1] }
 
         CALL(sam_bam_ch, ref_ch, excl_ch)
 

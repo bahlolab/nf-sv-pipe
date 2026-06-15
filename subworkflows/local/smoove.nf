@@ -15,7 +15,7 @@ workflow SMOOVE {
 
         CALL(fam_bams_ch, ref_ch, excl_ch)
 
-        SPLIT(CALL.out, 'SMOOVE')
+        SPLIT(CALL.out, 'SMOOVE', true)
 
         vcfs = SPLIT.out
             .flatMap { fam, bcfs, csis ->

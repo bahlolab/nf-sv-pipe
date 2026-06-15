@@ -3,7 +3,6 @@ process MANTA_CALL {
     label 'manta'
     label 'C8M16T48'
     tag { fam }
-    storeDir params.cachedir ? "${params.cachedir}/MANTA_CALL" : null
 
     input:
     tuple val(fam), path(bam), path(bai)

@@ -3,7 +3,6 @@ process DYSGU_CALL {
     label 'dysgu'
     label 'C2M16T8'
     tag { sam }
-    storeDir params.cachedir ? "${params.cachedir}/DYSGU_CALL" : null
 
     input:
     tuple val(sam), path(bam), path(bai)

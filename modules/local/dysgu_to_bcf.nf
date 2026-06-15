@@ -3,6 +3,7 @@ process DYSGU_TO_BCF {
     label 'bcftools'
     label 'C2M2T2'
     tag { sam }
+    publishDir "${params.outdir}/DYSGU", mode: 'copy'
 
     input:
     tuple val(sam), path(vcf)

@@ -3,7 +3,6 @@ process CNVNATOR_CALL {
     label 'C2M16T8'
     label 'cnvnator'
     tag { sam }
-    storeDir params.cachedir ? "${params.cachedir}/CNVNATOR_CALL" : null
 
     input:
     tuple val(sam), path(bam), path(bai)

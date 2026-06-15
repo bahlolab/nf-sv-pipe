@@ -5,7 +5,6 @@ process SMOOVE_CALL {
     cpus   { [2, (bams instanceof List ? bams : [bams]).size() * 2].max() }
     memory { 8.GB + (bams instanceof List ? bams : [bams]).size() * 8.GB }
     time   { 24.h * task.attempt }
-    storeDir params.cachedir ? "${params.cachedir}/SMOOVE_CALL" : null
 
 
     input:
