@@ -17,13 +17,13 @@ process DUPHOLD {
     def large_expr = '(INFO/SVTYPE="DEL" || INFO/SVTYPE="DUP") && (INFO/SVLEN >= ' + params.duphold_min_size + ' || INFO/SVLEN <= -' + params.duphold_min_size + ')'
     def del_cap = params.duphold_max_dels ?
         """
-        del_thr=\$(bcftools query -i 'INFO/SVTYPE=="DEL"' -f '[%DHFFC\\n]' large_dh.bcf | sort -g | sed -n '${params.duphold_max_dels}p')
+        del_thr=\$(bcftools query -i 'INFO/SVTYPE=="DEL"' -f '[%DHBFC\\n]' large_dh.bcf | sort -g | sed -n '${params.duphold_max_dels}p')
         if [ -n "\$del_thr" ]; then
-            del_thr=\$(awk -v a="\$del_thr" -v b="${params.duphold_del_dhffc}" 'BEGIN{print (a<b)?a:b}')
+            del_thr=\$(awk -v a="\$del_thr" -v b="${params.duphold_del_dhbfc}" 'BEGIN{print (a<b)?a:b}')
         else
-            del_thr=${params.duphold_del_dhffc}
+            del_thr=${params.duphold_del_dhbfc}
         fi
-        """ : "del_thr=${params.duphold_del_dhffc}"
+        """ : "del_thr=${params.duphold_del_dhbfc}"
     def dup_cap = params.duphold_max_dups ?
         """
         dup_thr=\$(bcftools query -i 'INFO/SVTYPE=="DUP"' -f '[%DHBFC\\n]' large_dh.bcf | sort -gr | sed -n '${params.duphold_max_dups}p')
@@ -43,9 +43,9 @@ process DUPHOLD {
 
     ${del_cap}
     ${dup_cap}
-    echo "DUPHOLD ${sam}: del_thr=\$del_thr (default ${params.duphold_del_dhffc}, max_dels ${params.duphold_max_dels ?: 'unset'}); dup_thr=\$dup_thr (default ${params.duphold_dup_dhbfc}, max_dups ${params.duphold_max_dups ?: 'unset'})"
+    echo "DUPHOLD ${sam}: del_thr=\$del_thr (default ${params.duphold_del_dhbfc}, max_dels ${params.duphold_max_dels ?: 'unset'}); dup_thr=\$dup_thr (default ${params.duphold_dup_dhbfc}, max_dups ${params.duphold_max_dups ?: 'unset'})"
 
-    dh_excl='(INFO/SVTYPE="DEL" && FMT/DHFFC[0] > '\$del_thr') || (INFO/SVTYPE="DUP" && FMT/DHBFC[0] < '\$dup_thr')'
+    dh_excl='(INFO/SVTYPE="DEL" && FMT/DHBFC[0] > '\$del_thr') || (INFO/SVTYPE="DUP" && FMT/DHBFC[0] < '\$dup_thr')'
     bcftools view --threads ${task.cpus} -e "\$dh_excl" large_dh.bcf -Ob -o large_pass.bcf
     bcftools index --threads ${task.cpus} large_pass.bcf
 
