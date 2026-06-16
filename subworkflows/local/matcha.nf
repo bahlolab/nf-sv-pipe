@@ -56,7 +56,7 @@ workflow MATCHA {
             bcfs: bcfs
             csis: csis
         }
-        CONCAT(concat_split.bcfs, concat_split.csis, 'MATCHA')
+        CONCAT(concat_split.bcfs, concat_split.csis, 'MATCHA', true)
 
     emit:
         duphold                         // [sam, bcf, csi] - freshly duphold-filtered per-sample BCFs (empty when params.duphold=false); feeds the output manifest's MATCHA-DUPHOLD rows

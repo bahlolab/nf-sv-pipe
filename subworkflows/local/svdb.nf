@@ -54,7 +54,7 @@ workflow SVDB {
             bcfs: bcfs
             csis: csis
         }
-        CONCAT(concat_split.bcfs, concat_split.csis, 'SVDB')
+        CONCAT(concat_split.bcfs, concat_split.csis, 'SVDB', false)
 
         CLEAN(CONCAT.out, 'SVDB')
 
