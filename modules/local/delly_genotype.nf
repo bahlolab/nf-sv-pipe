@@ -3,7 +3,6 @@ process DELLY_GENOTYPE {
     label 'delly'
     label 'C2M8T8'
     tag { sam }
-    publishDir "${params.outdir}/DELLY", mode: 'copy'
 
     input:
     tuple val(sam), path(bam), path(bai), path(sites_bcf), path(sites_csi)

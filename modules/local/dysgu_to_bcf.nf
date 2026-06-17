@@ -14,7 +14,7 @@ process DYSGU_TO_BCF {
     script:
     out_bcf = "${sam}.DYSGU.bcf"
     """
-    bcftools view ${vcf} --threads ${task.cpus} -Ob -o ${out_bcf} 
-    bcftools index ${out_bcf} --threads ${task.cpus} 
+    bcftools view ${vcf} | svlen_fix.awk | bcftools view --threads ${task.cpus} -Ob -o ${out_bcf}
+    bcftools index ${out_bcf} --threads ${task.cpus}
     """
 }

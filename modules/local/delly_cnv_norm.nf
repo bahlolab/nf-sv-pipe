@@ -26,6 +26,7 @@ process DELLY_CNV_NORM {
     """
     bcftools view ${bcf} \\
         | delly_cnv_norm.awk \\
+        | svlen_fix.awk \\
         | bcftools view --threads ${task.cpus} -Ob -o normed.bcf
     bcftools index --threads ${task.cpus} normed.bcf
 

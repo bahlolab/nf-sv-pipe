@@ -2,6 +2,7 @@
 include { DELLY_CALL     as CALL     } from '../../modules/local/delly_call'
 include { DELLY_MERGE    as MERGE    } from '../../modules/local/delly_merge'
 include { DELLY_GENOTYPE as GENOTYPE } from '../../modules/local/delly_genotype'
+include { DELLY_NORM     as NORM     } from '../../modules/local/delly_norm'
 
 workflow DELLY {
     take:
@@ -17,7 +18,7 @@ workflow DELLY {
 
         sam_bam_ch = fam_bam_ch
             .combine(fam_sizes, by: 0)
-            .map { _fam, sam, bam, bai, size -> [sam, bam, bai, size == 1] }
+            .map { _fam, sam, bam, bai, _size -> [sam, bam, bai] }
 
         CALL(sam_bam_ch, ref_ch, excl_ch)
 
@@ -43,7 +44,9 @@ workflow DELLY {
 
         GENOTYPE(genotype_in, ref_ch, excl_ch)
 
-        vcfs = singleton_bcfs.mix(GENOTYPE.out).map { sam, bcf, csi -> ['DELLY', sam, bcf, csi] }
+        NORM(singleton_bcfs.mix(GENOTYPE.out))
+
+        vcfs = NORM.out.map { sam, bcf, csi -> ['DELLY', sam, bcf, csi] }
 
     emit:
         vcfs
