@@ -11,6 +11,7 @@ include { DYSGU                 } from '../subworkflows/local/dysgu'
 include { FETCH_REFERENCE_FILES } from '../modules/local/fetch_reference_files'
 include { MAKE_CALL_REGIONS     } from '../modules/local/make_call_regions'
 include { COPY_BAMS             } from '../modules/local/copy_bams'
+include { CRAM_TO_BAM           } from '../modules/local/cram_to_bam'
 include { PASS_FILTER           } from '../modules/local/pass_filter'
 include { MATCHA                } from '../subworkflows/local/matcha'
 include { TRUVARI               } from '../subworkflows/local/truvari'
@@ -38,7 +39,7 @@ workflow SVPLEX {
             }
             if (params.matcha)  MATCHA (channel.empty(), chrs_ch, channel.empty(), ref_ch, ch_for('MATCHA'))
             if (params.svdb)    SVDB   (channel.empty(), chrs_ch, channel.empty(), ref_ch, ch_for('SVDB'))
-            if (params.truvari) TRUVARI(channel.empty(),          channel.empty(), ref_ch, ch_for('TRUVARI'))
+            if (params.truvari) TRUVARI(channel.empty(), chrs_ch, channel.empty(), ref_ch, ch_for('TRUVARI'))
             return
         }
 
@@ -61,16 +62,28 @@ workflow SVPLEX {
         def needs_ref = params.callers.intersect(['MANTA', 'SMOOVE', 'DELLY', 'DELLY_CNV', 'CNVNATOR'])
         if (needs_ref) FETCH_REFERENCE_FILES()
 
+        // Split CRAM from BAM; CRAMs always convert (implicit work-dir copy)
+        split_input = fam_bam_ch.branch { _fam, _sam, bam, _bai ->
+            cram: bam.name.endsWith('.cram')
+            bam:  true
+        }
+        converted_ch = CRAM_TO_BAM(split_input.cram, ref_ch)
+
+        // Optionally copy BAM inputs only (not CRAMs — already in work dir after conversion)
+        def bam_ch
         if (params.copy_bams) {
             def will_run_any_caller = { fam -> params.callers.any { c -> !(fam.toString() in family_fully_cached[c]) } }
             def duphold_active      = params.duphold && (params.matcha || params.svdb || params.truvari)
-            split_bams = fam_bam_ch.branch { fam, _sam, _bam, _bai ->
+            split_bams = split_input.bam.branch { fam, _sam, _bam, _bai ->
                 to_copy:     duphold_active || will_run_any_caller(fam)
                 passthrough: true
             }
-            copied = COPY_BAMS(split_bams.to_copy)
-            fam_bam_ch = copied.mix(split_bams.passthrough)
+            bam_ch = COPY_BAMS(split_bams.to_copy).mix(split_bams.passthrough)
+        } else {
+            bam_ch = split_input.bam
         }
+
+        fam_bam_ch = bam_ch.mix(converted_ch)
 
         // Per-caller BAM input: drop families fully cached for that caller.
         def bam_for = params.callers.collectEntries { caller ->
@@ -119,7 +132,7 @@ workflow SVPLEX {
         sam_bam_ch = fam_bam_ch.map { _fam, sam, bam, bai -> [sam, bam, bai] }
 
         if (params.matcha)  MATCHA (vcfs, chrs_ch, sam_bam_ch, ref_ch, channel.empty())
-        if (params.truvari) TRUVARI(vcfs,          sam_bam_ch, ref_ch, channel.empty())
+        if (params.truvari) TRUVARI(vcfs, chrs_ch, sam_bam_ch, ref_ch, channel.empty())
         if (params.svdb)    SVDB   (vcfs, chrs_ch, sam_bam_ch, ref_ch, channel.empty())
 
         // ───── Output manifests (normal mode only) ─────

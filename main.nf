@@ -33,7 +33,9 @@ workflow {
         def ped  = read_tsv(path(params.ped),  ['fid', 'iid', 'pid', 'mid', 'sex', 'phe'])
         def bams = read_tsv(path(params.bams), ['iid', 'bam'])
         fam_bam_ch = Channel.from(bams)
-            .map { [it.iid, path(it.bam), path(it.bam + '.bai')] }
+            .map { it.bam.endsWith('.cram')
+                ? [it.iid, path(it.bam), path(it.bam + '.crai')]
+                : [it.iid, path(it.bam), path(it.bam + '.bai')] }
             .combine(Channel.from(ped.collect { [it.iid, it.fid] }), by: 0)
             .map { iid, bam, bai, fid -> [params.familial ? fid : iid, iid, bam, bai] }
     }

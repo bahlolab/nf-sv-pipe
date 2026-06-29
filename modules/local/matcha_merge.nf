@@ -21,6 +21,9 @@ process MATCHA_MERGE {
     """
     matcha merge \\
         --min-jaccard ${params.matcha_min_jaccard} \\
+        --bnd-slop ${params.matcha_bnd_slop} \\
+        --min-ins-sim ${params.matcha_min_ins_sim} \\
+        --ins-slop ${params.matcha_ins_slop} \\
         --threads ${task.cpus} \\
         --missing-to-ref \\
         ${chr_arg} \\

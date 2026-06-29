@@ -35,7 +35,7 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 |---|---|
 | `id` | Unique name for the run; used in output filenames (default: `'SVPLEX'`) |
 | `ped` | Path to a [PED format file](https://gatk.broadinstitute.org/hc/en-us/articles/360035531972-PED-Pedigree-format); only the first two columns (family ID, sample ID) are used |
-| `bams` | Path to a TSV with sample ID in column 1 and path to indexed BAM/CRAM in column 2 (no header) |
+| `bams` | Path to a TSV with sample ID in column 1 and path to indexed BAM or CRAM in column 2 (no header). CRAM files (`.cram` + `.crai`) are automatically converted to BAM before calling. |
 | `ref_fasta` | Reference genome FASTA (must be indexed) |
 | `assembly` | Genome build: `'hg38'` (default) or `'hg19'` |
 | `outdir` | Output directory (default: `'output'`) |
@@ -58,7 +58,7 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `caller_manifest` | Optional TSV (`sample<TAB>caller<TAB>path`) of cached per-sample per-caller BCFs. When provided, caller calls are skipped for families whose every sample has a cached entry (joint-call all-or-nothing rule). Per-caller BCFs are auto-published to `${outdir}/<CALLER>/`. A new `${id}.caller_manifest.tsv` is written each run. Ignored in merge-only mode. |
 | `merge_manifest` | Optional TSV (`sample<TAB>branch<TAB>path`) of per-sample post-collapse/duphold BCFs. **If set, triggers merge-only mode**: `params.bams` and `params.caller_manifest` are ignored (with a warning); only the samples listed are merged. Every sample must have an entry for every active merge branch. Per-branch DUPHOLD BCFs are auto-published to `${outdir}/<BRANCH>/`. A new `${id}.merge_manifest.tsv` is written in normal mode. |
 | `chr_prefix` | Chromosome name prefix; `null` = auto-detect (`'chr'` for hg38, `''` for hg19) |
-| `copy_bams` | Copy BAMs to work directory before calling — use when input is on slow or remote storage (default: `false`) |
+| `copy_bams` | Copy BAM inputs to work directory before calling — use when input is on slow or remote storage (default: `false`). Does not apply to CRAM inputs, which are always converted to BAM in the work directory. |
 | `refdir` | Directory for downloaded reference files (mappability, exclude lists); default: `'reference_files'` |
 | `min_mapq` | Minimum mapping quality for reads (default: `15`) |
 | `delly_cnv_max_dels` | If set, cap DELLY_CNV DEL callsets to top N by QUAL after CNV-normalisation (default: `2000`) |
@@ -70,7 +70,10 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `duphold_dup_dhbfc` | Exclude DUPs where `FMT/DHBFC[0]` is below this threshold (default: `1.25`) |
 | `duphold_max_dels` | If set, cap DELs passing duphold by tightening DHBFC so at most N DELs pass (default: `4000`) |
 | `duphold_max_dups` | If set, cap DUPs passing duphold by tightening DHBFC so at most N DUPs pass (default: `1000`) |
-| `matcha_min_jaccard` | Minimum Jaccard similarity for matcha collapse/merge (default: `0.75`) |
+| `matcha_min_jaccard` | matcha `--min-jaccard`: min Jaccard similarity for DEL/DUP/INV, collapse + merge (default: `0.75`) |
+| `matcha_bnd_slop` | matcha `--bnd-slop`: max breakend offset for BND, collapse + merge (default: `50`) |
+| `matcha_min_ins_sim` | matcha `--min-ins-sim`: min INS combined similarity (`sqrt(pos*len)`), collapse + merge (default: `0.75`) |
+| `matcha_ins_slop` | matcha `--ins-slop`: max position offset for INS, collapse + merge (default: `50`) |
 | `matcha_sample_filter` | bcftools `-i` filter applied after per-sample matcha collapse (default: `'FILTER="PASS" || INFO/N_CALLERS>1'` — keeps PASS calls or events detected by ≥2 callers) |
 | `matcha_cohort_filter` | bcftools `-i` filter applied after matcha cohort merge (default: `'INFO/N_CALLERS>1'` — keeps events detected by ≥2 callers in at least one sample) |
 | `truvari_itvl_refdist` | DEL/DUP/INV collapse `--refdist` — max bp distance between breakpoints (default: `10000`) |
@@ -80,8 +83,10 @@ Nextflow cohort-level SV calling pipeline using six callers ([MANTA](https://git
 | `truvari_bnd_pctsize` | BND/INS collapse `--pctsize` — min size similarity fraction (default: `0.75`) |
 | `truvari_sample_filter` | bcftools `-i` filter applied after per-sample truvari collapse; default keeps events detected by ≥2 callers (`NumConsolidated>0`) |
 | `truvari_cohort_filter` | bcftools `-i` filter applied after truvari cohort merge (default: `null` — no filter) |
-| `svdb_overlap` | SVDB `--overlap`: min reciprocal overlap fraction for merging, both stages (default: `0.75`) |
-| `svdb_bnd_distance` | SVDB `--bnd_distance`: max bp distance between precise breakpoints, both stages (default: `50`) |
+| `svdb_itvl_overlap` | SVDB DEL/DUP/INV `--overlap`: min reciprocal overlap fraction, both stages (default: `0.75`) |
+| `svdb_itvl_bnd_distance` | SVDB DEL/DUP/INV `--bnd_distance`: max bp distance between breakpoints, both stages (default: `50`) |
+| `svdb_bnd_overlap` | SVDB BND/INS `--overlap`: not meaningful for breakpoints; matching driven by bnd_distance, both stages (default: `0.0`) |
+| `svdb_bnd_bnd_distance` | SVDB BND/INS `--bnd_distance`: max bp distance between breakpoints, both stages (default: `50`) |
 | `svdb_sample_filter` | bcftools `-i` filter applied after per-sample SVDB collapse; default keeps events detected by ≥2 callers (`FOUNDBY>1`) |
 | `svdb_cohort_filter` | bcftools `-i` filter applied after SVDB cohort merge (default: `null` — no filter) |
 | `svdb_info_keep` | INFO fields retained in SVDB output BCFs (default: `['SVTYPE', 'SVLEN', 'END', 'POS2', 'CHR2', 'set', 'FOUNDBY', 'svdb_origin', 'SUPP_VEC']`) |
@@ -176,11 +181,11 @@ Setting `--merge_manifest` puts the pipeline into **merge-only mode**: callers, 
 * Each enabled caller runs in parallel. Callers that support joint family calling (MANTA, SMOOVE, DELLY, DELLY_CNV) operate on family-grouped BAMs.
 * Callers listed in `apply_filters` (default: DYSGU, DELLY) have their per-sample BCFs PASS-filtered before merging.
 * The PASS-filtered caller channel feeds all three merge branches; each runs independently and can be toggled with `params.svdb`, `params.matcha`, or `params.truvari`. SVDB is the primary default (`true`); MATCHA and TRUVARI default to `false`.
-* **MATCHA per-sample collapse**: `matcha collapse` merges calls from all callers per sample. Caller priority follows `params.callers` order — the first caller's record is kept when calls are collapsed.
+* **MATCHA per-sample collapse**: `matcha collapse` merges calls from all callers per sample, matching DEL/DUP/INV by Jaccard overlap (`--min-jaccard`) and BND/INS by breakpoint proximity/similarity (`--bnd-slop`, `--min-ins-sim`, `--ins-slop`). Caller priority follows `params.callers` order — the first caller's record is kept when calls are collapsed.
 * **TRUVARI per-sample collapse**: FORMAT fields are stripped to GT-only per caller, then `bcftools merge -m id --force-samples` creates a multi-column VCF (one column per caller). Variants are split into DEL/DUP/INV (interval-overlap matching) and BND/INS (breakpoint-proximity matching) subsets; `truvari collapse --intra --chain` runs on each with type-specific params, and results are concatenated and sorted. `--intra` consolidates the per-caller columns into a single sample column with a `FORMAT/SUPP` support field.
 * **DUPHOLD** (when `params.duphold = true`): After per-sample collapse, duphold annotates DEL/DUP variants ≥ `params.duphold_min_size` with depth-fold-change fields (`FMT/DHBFC`). DELs with `DHBFC > params.duphold_del_dhbfc` and DUPs with `DHBFC < params.duphold_dup_dhbfc` are dropped. If `params.duphold_max_dels` / `params.duphold_max_dups` are set and more than N DELs / DUPs would pass, the DHBFC threshold is tightened dynamically — the Nth-best metric is used in place of the default, so at most N records of that type survive. Smaller variants and non-DEL/DUP SVTYPE values bypass duphold and are merged back before the cohort step. Applies to all merge branches.
 * **DELLY_CNV normalisation**: DELLY_CNV emits `SVTYPE=CNV` records, which are recoded to DEL/DUP based on copy number by `bin/delly_cnv_norm.awk`. If `params.delly_cnv_max_dels` / `params.delly_cnv_max_dups` are set, the normalised callset is then capped per-type to the top N by QUAL.
-* **MATCHA cohort merge**: `matcha merge` pools all per-sample collapsed BCFs into a single cohort BCF.
+* **MATCHA cohort merge**: `matcha merge` pools all per-sample collapsed BCFs into a single cohort BCF, using the same type-specific matching params (`--min-jaccard`, `--bnd-slop`, `--min-ins-sim`, `--ins-slop`).
 * **TRUVARI cohort merge**: `bcftools merge -m id` pools per-sample collapsed BCFs into a multi-sample VCF, then the same DEL/DUP/INV / BND/INS split-collapse approach runs without `--intra`.
-* **SVDB per-sample collapse**: BCFs are converted to VCF.gz; `svdb --merge --priority <callers>` merges them with caller priority matching `params.callers` order.
-* **SVDB cohort merge**: Per-sample SVDB-collapsed BCFs are converted to VCF.gz; `svdb --merge` merges across samples. No caller priority is applied at this stage.
+* **SVDB per-sample collapse**: BCFs are converted to VCF.gz and split into DEL/DUP/INV (interval) and BND/INS subsets; `svdb --merge --priority <callers>` runs on each subset with type-specific `--overlap`/`--bnd_distance`, and the two outputs are concatenated. Caller priority matches `params.callers` order.
+* **SVDB cohort merge**: Per-sample SVDB-collapsed BCFs are converted to VCF.gz, split into the same two subsets, merged across samples with `svdb --merge` (type-specific `--overlap`/`--bnd_distance`), and concatenated. No caller priority is applied at this stage.

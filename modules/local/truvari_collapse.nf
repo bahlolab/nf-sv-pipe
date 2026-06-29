@@ -14,7 +14,7 @@ process TRUVARI_COLLAPSE {
     script:
     out_bcf = "${sam}.TRUVARI.bcf"
     def filter_cmd = params.truvari_sample_filter \
-        ? "bcftools view --threads ${task.cpus} -i '${params.truvari_sample_filter}' -Ob -o ${out_bcf} collapsed.bcf" \
+        ? "bcftools view --threads ${task.cpus} -i '${params.truvari_sample_filter}' -Ob -o ${out_bcf} collapsed.bcf && rm -f collapsed.bcf" \
         : "mv collapsed.bcf ${out_bcf}"
     """
     trimmed=""
@@ -27,7 +27,7 @@ process TRUVARI_COLLAPSE {
 
     bcftools merge -m none --force-samples --threads ${task.cpus} \\
         -Oz -o merged.vcf.gz \$trimmed
-    bcftools index -t --threads ${task.cpus} merged.vcf.gz
+    rm -f *.gt.bcf *.gt.bcf.csi
 
     bcftools view -i 'INFO/SVTYPE="DEL" || INFO/SVTYPE="DUP" || INFO/SVTYPE="INV"' \\
         --threads ${task.cpus} -Oz -o sv.vcf.gz merged.vcf.gz
@@ -36,6 +36,7 @@ process TRUVARI_COLLAPSE {
     bcftools view -i 'INFO/SVTYPE="BND" || INFO/SVTYPE="INS"' \\
         --threads ${task.cpus} -Oz -o bnd.vcf.gz merged.vcf.gz
     bcftools index -t --threads ${task.cpus} bnd.vcf.gz
+    rm -f merged.vcf.gz
 
     truvari collapse \\
         -i sv.vcf.gz \\
@@ -43,12 +44,14 @@ process TRUVARI_COLLAPSE {
         -c removed_sv.vcf.gz \\
         --intra \\
         --chain \\
+        --sizemax -1 \\
         --refdist ${params.truvari_itvl_refdist} \\
         --pctovl  ${params.truvari_itvl_pctovl} \\
         --pctsize 0.0 \\
         --pctseq 0.0
     bcftools sort -Oz -o sv_collapsed.vcf.gz sv_collapsed.vcf && rm sv_collapsed.vcf
     bcftools index -t --threads ${task.cpus} sv_collapsed.vcf.gz
+    rm -f sv.vcf.gz sv.vcf.gz.tbi removed_sv.vcf.gz
 
     truvari collapse \\
         -i bnd.vcf.gz \\
@@ -63,9 +66,11 @@ process TRUVARI_COLLAPSE {
         --pctseq 0.0
     bcftools sort -Oz -o bnd_collapsed.vcf.gz bnd_collapsed.vcf && rm bnd_collapsed.vcf
     bcftools index -t --threads ${task.cpus} bnd_collapsed.vcf.gz
-    
+    rm -f bnd.vcf.gz bnd.vcf.gz.tbi removed_bnd.vcf.gz
+
     bcftools concat --allow-overlaps --threads ${task.cpus} \\
         sv_collapsed.vcf.gz bnd_collapsed.vcf.gz -Ob -o collapsed.bcf
+    rm -f sv_collapsed.vcf.gz sv_collapsed.vcf.gz.tbi bnd_collapsed.vcf.gz bnd_collapsed.vcf.gz.tbi
 
     ${filter_cmd}
     bcftools index --threads ${task.cpus} ${out_bcf}

@@ -2,22 +2,22 @@
 process TRUVARI_MERGE {
     label 'bcftools_truvari'
     label 'C4M16T4'
+    tag "${chr ?: 'all'}"
 
     input:
-    path(bcfs)
-    path(csis)
+    tuple path(bcfs), path(csis), val(chr)
 
     output:
-    tuple path(out_bcf), path("${out_bcf}.csi")
+    tuple val(chr), path(out_bcf), path("${out_bcf}.csi")
 
     script:
-    out_bcf = "${params.id}.TRUVARI.merge.bcf"
+    out_bcf = chr ? "${params.id}.${chr}.TRUVARI.merge.bcf" : "${params.id}.TRUVARI.merge.bcf"
+    def region_arg = chr ? "-r ${chr}" : ""
     def filter_cmd = params.truvari_cohort_filter \
         ? "bcftools view --threads ${task.cpus} -i '${params.truvari_cohort_filter}' -Ob -o ${out_bcf} collapsed.bcf" \
         : "mv collapsed.bcf ${out_bcf}"
     """
-    bcftools merge -m none --threads ${task.cpus} -Oz -o merged.vcf.gz ${bcfs.join(' ')}
-    bcftools index -t --threads ${task.cpus} merged.vcf.gz
+    bcftools merge -m none --threads ${task.cpus} ${region_arg} -Oz -o merged.vcf.gz ${bcfs.join(' ')}
 
     bcftools view -i 'INFO/SVTYPE="DEL" || INFO/SVTYPE="DUP" || INFO/SVTYPE="INV"' \\
         --threads ${task.cpus} -Oz -o sv.vcf.gz merged.vcf.gz
@@ -32,6 +32,7 @@ process TRUVARI_MERGE {
         -o sv_collapsed.vcf \\
         -c removed_sv.vcf.gz \\
         --chain \\
+        --sizemax -1 \\
         --refdist ${params.truvari_itvl_refdist} \\
         --pctovl  ${params.truvari_itvl_pctovl} \\
         --pctsize 0.0 \\
